@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: modern-product-search
+    env: java
+    buildCommand: |
+      ./mvnw clean package -DskipTests
+      cd frontend
+      npm install
+      npm run build
+      mkdir -p ../src/main/resources/static
+      cp -r build/* ../src/main/resources/static/
+    startCommand: java -Dserver.port=$PORT -Dspring.profiles.active=render -jar target/modern-product-search-1.0.0.jar
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: render
+      - key: JAVA_OPTS
+        value: -Xmx512m -Xms256m
