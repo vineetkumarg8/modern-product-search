@@ -13,7 +13,8 @@ COPY pom.xml ./
 RUN mvn dependency:resolve
 
 COPY src ./src
-COPY --from=frontend-build /app/frontend/build ./src/main/resources/static
+COPY --from=frontend-build /app/frontend/build ./src/main/resources/static/
+RUN ls -la src/main/resources/static/
 RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
