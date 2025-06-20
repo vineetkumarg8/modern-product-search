@@ -28,29 +28,29 @@ This application demonstrates modern full-stack development practices with a com
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Frontend (React)                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
-│  │   Pages     │  │ Components  │  │   Context   │            │
-│  │ • HomePage  │  │ • SearchBar │  │ • ProductSearch         │
-│  │ • SearchPage│  │ • ProductGrid│  │ • StateManagement       │
-│  └─────────────┘  └─────────────┘  └─────────────┘            │
+│                        Frontend (React)                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
+│  │   Pages     │  │ Components  │  │   Context   │              │
+│  │ • HomePage  │  │ • SearchBar │  │ • ProductSearch            │
+│  │ • SearchPage│  │ • ProductGrid│  │ • StateManagement         │
+│  └─────────────┘  └─────────────┘  └─────────────┘              │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                             HTTP/REST
                                 │
 ┌─────────────────────────────────────────────────────────────────┐
-│                       Backend (Spring Boot)                    │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
-│  │ Controllers │  │  Services   │  │ Repositories│            │
-│  │ • ProductCtrl│  │ • ProductSvc│  │ • ProductRepo│           │
-│  │ • DataLoadCtrl│ │ • DataLoadSvc│ │ • SearchRepo│            │
-│  └─────────────┘  └─────────────┘  └─────────────┘            │
-│                                │                               │
-│                                ▼                               │
-│                    ┌─────────────────┐                        │
-│                    │   H2 Database   │                        │
-│                    │ (In-Memory)     │                        │
-│                    └─────────────────┘                        │
+│                       Backend (Spring Boot)                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
+│  │ Controllers │  │  Services   │  │ Repositories│              │
+│  │ • ProductCtrl│  │ • ProductSvc│  │ • ProductRepo│            │
+│  │ • DataLoadCtrl│ │ • DataLoadSvc│ │ • SearchRepo│             │
+│  └─────────────┘  └─────────────┘  └─────────────┘              │
+│                                │                                │
+│                                ▼                                │
+│                    ┌─────────────────┐                          │
+│                    │   H2 Database   │                          │
+│                    │ (In-Memory)     │                          │
+│                    └─────────────────┘                          │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
