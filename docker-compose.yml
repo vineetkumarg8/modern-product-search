@@ -1,12 +1,12 @@
 version: '3.8'
 
 services:
-  # Product Orchestration API
+  # Modern Product Search API
   product-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: product-orchestration-api
+    container_name: modern-product-search-api
     ports:
       - "8080:8080"
     environment:

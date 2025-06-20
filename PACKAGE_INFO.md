@@ -1,4 +1,4 @@
-﻿# Product Search Application
+﻿# Modern Product Search
 
 **Package Created:** 2025-06-05 17:50:55
 **Application Type:** Full-Stack Web Application

@@ -5,7 +5,7 @@ server:
 
 spring:
   application:
-    name: product-orchestration-api
+    name: modern-product-search
   
   # H2 Database Configuration
   datasource:
@@ -119,8 +119,8 @@ springdoc:
     path: /swagger-ui.html
     enabled: true
   info:
-    title: Product Orchestration API
-    description: RESTful API for loading and searching product data from external sources
+    title: Modern Product Search API
+    description: Modern RESTful API for advanced product search and data management
     version: 1.0.0
     contact:
       name: Product API Team

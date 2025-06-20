@@ -1,4 +1,4 @@
-# 🛍️ Product Search Application
+# 🛍️ Modern Product Search
 
 A modern full-stack web application for searching and browsing products with advanced filtering, sorting, and pagination capabilities. Built with Spring Boot backend and React frontend.
 
@@ -95,7 +95,7 @@ This application demonstrates modern full-stack development practices with a com
 #### 1. Clone the Repository
 ```bash
 git clone <repository-url>
-cd product-search-application
+cd modern-product-search
 ```
 
 #### 2. Backend Setup (Spring Boot)

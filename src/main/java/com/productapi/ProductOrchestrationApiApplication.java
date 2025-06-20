@@ -5,12 +5,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
- * Main application class for Product Orchestration API.
+ * Main application class for Modern Product Search.
  *
- * This application provides RESTful endpoints to:
+ * This modern application provides advanced RESTful endpoints to:
  * - Load product data from external APIs into in-memory H2 database
- * - Search products using free text search on title and description
- * - Find products by ID or SKU
+ * - Advanced product search with full-text search capabilities
+ * - Find products by ID, SKU, category, and brand
+ * - Real-time search suggestions and filtering
  *
  * Features:
  * - Resilient external API calls with circuit breaker and retry
@@ -18,8 +19,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * - Comprehensive API documentation with OpenAPI/Swagger
  * - Clean architecture with proper exception handling
  * - Extensive test coverage
+ * - Modern React frontend integration
  *
- * @author Product API Team
+ * @author Modern Product Search Team
  * @version 1.0.0
  */
 @SpringBootApplication
