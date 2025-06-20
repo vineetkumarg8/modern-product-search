@@ -6,18 +6,15 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-FROM eclipse-temurin:17-jdk-alpine AS backend-build
+FROM maven:3.9.4-eclipse-temurin-17-alpine AS backend-build
 
 WORKDIR /app
-COPY mvnw.cmd mvnw ./
-COPY .mvn .mvn
 COPY pom.xml ./
-RUN chmod +x mvnw
-RUN ./mvnw dependency:resolve
+RUN mvn dependency:resolve
 
 COPY src ./src
 COPY --from=frontend-build /app/frontend/build ./src/main/resources/static
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
 
