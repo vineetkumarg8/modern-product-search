@@ -1,0 +1,422 @@
+{
+  "info": {
+    "name": "Product Orchestration API",
+    "description": "Comprehensive API collection for testing Product Orchestration API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Application Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Application Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "info"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Data Loading",
+      "item": [
+        {
+          "name": "Check External API Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/data/api-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["data", "api-status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Load All Products",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/data/load",
+              "host": ["{{baseUrl}}"],
+              "path": ["data", "load"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Load Specific Product",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/data/load/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["data", "load", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Loading Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/data/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["data", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rebuild Search Index",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/data/rebuild-index",
+              "host": ["{{baseUrl}}"],
+              "path": ["data", "rebuild-index"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clear All Products",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/data/clear",
+              "host": ["{{baseUrl}}"],
+              "path": ["data", "clear"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product Search",
+      "item": [
+        {
+          "name": "Search Products - Basic",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/search?q=mascara&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "search"],
+              "query": [
+                {"key": "q", "value": "mascara"},
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "10"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Products - Fuzzy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/search?q=mascare&fuzzy=true&page=0&size=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "search"],
+              "query": [
+                {"key": "q", "value": "mascare"},
+                {"key": "fuzzy", "value": "true"},
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "5"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Products - Sorted by Price",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/search?q=beauty&sort=price&direction=desc&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "search"],
+              "query": [
+                {"key": "q", "value": "beauty"},
+                {"key": "sort", "value": "price"},
+                {"key": "direction", "value": "desc"},
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "10"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Search Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/suggestions?q=lip&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "suggestions"],
+              "query": [
+                {"key": "q", "value": "lip"},
+                {"key": "limit", "value": "10"}
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product Retrieval",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?page=0&size=20&sort=title&direction=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "20"},
+                {"key": "sort", "value": "title"},
+                {"key": "direction", "value": "asc"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by External ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/external/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "external", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by SKU",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/sku/BEA-ESS-ESS-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "sku", "BEA-ESS-ESS-001"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product Filtering",
+      "item": [
+        {
+          "name": "Get Products by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/category/beauty?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "category", "beauty"],
+              "query": [
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "10"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Products by Brand",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/brand/Essence?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "brand", "Essence"],
+              "query": [
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "10"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Brands",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/brands",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "brands"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Scenarios",
+      "item": [
+        {
+          "name": "Get Non-existent Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "999999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product with Invalid SKU",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/sku/NON-EXISTENT-SKU",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "sku", "NON-EXISTENT-SKU"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search with Invalid Page Size",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/search?q=test&page=0&size=101",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "search"],
+              "query": [
+                {"key": "q", "value": "test"},
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "101"}
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set timestamp for requests",
+          "pm.globals.set('timestamp', new Date().toISOString());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Common tests for all requests",
+          "pm.test('Response time is less than 5000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "pm.test('Response has timestamp', function () {",
+          "    const jsonData = pm.response.json();",
+          "    if (jsonData.timestamp) {",
+          "        pm.expect(jsonData.timestamp).to.be.a('string');",
+          "    }",
+          "});",
+          "",
+          "// Log response for debugging",
+          "console.log('Response Status:', pm.response.status);",
+          "console.log('Response Time:', pm.response.responseTime + 'ms');"
+        ]
+      }
+    }
+  ]
+}

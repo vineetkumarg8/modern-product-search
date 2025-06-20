@@ -1,0 +1,127 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: product-orchestration-api
+  
+  # H2 Database Configuration
+  datasource:
+    url: jdbc:h2:mem:productdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+  
+  # JPA Configuration
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        # Hibernate Search Configuration
+        search:
+          backend:
+            type: lucene
+            directory:
+              type: local-filesystem
+              root: target/lucene/indexes
+          automatic_indexing:
+            synchronization:
+              strategy: sync
+
+  # WebFlux Configuration for External API calls
+  webflux:
+    base-path: /api/v1
+
+# External API Configuration
+external:
+  api:
+    products:
+      base-url: https://dummyjson.com
+      endpoints:
+        all-products: /products?limit=0
+        product-by-id: /products/{id}
+      timeout:
+        connect: 5000
+        read: 10000
+      retry:
+        max-attempts: 3
+        delay: 1000
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      external-api:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 5s
+        failure-rate-threshold: 50
+        event-consumer-buffer-size: 10
+  retry:
+    instances:
+      external-api:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.reactive.function.client.WebClientRequestException
+          - java.util.concurrent.TimeoutException
+  timelimiter:
+    instances:
+      external-api:
+        timeout-duration: 10s
+
+# Logging Configuration
+logging:
+  level:
+    com.productapi: DEBUG
+    org.hibernate.search: INFO
+    org.springframework.web.reactive.function.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management and Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+# OpenAPI Documentation
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  info:
+    title: Product Orchestration API
+    description: RESTful API for loading and searching product data from external sources
+    version: 1.0.0
+    contact:
+      name: Product API Team
+      email: support@productapi.com

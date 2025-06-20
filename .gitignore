@@ -1,0 +1,20 @@
+﻿# Build artifacts
+target/
+frontend/node_modules/
+frontend/build/
+*.jar
+*.class
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

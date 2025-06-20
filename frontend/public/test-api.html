@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>API Connectivity Test</h1>
+    
+    <button onclick="testDirectAPI()">Test Direct API (localhost:8080)</button>
+    <button onclick="testProxyAPI()">Test Proxy API (/api/v1)</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, isSuccess, data = null) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+            
+            let content = `<strong>${message}</strong>`;
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            resultDiv.innerHTML = content;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        async function testDirectAPI() {
+            try {
+                console.log('Testing direct API...');
+                const response = await fetch('http://localhost:8080/api/v1/products?size=2', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    mode: 'cors',
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                addResult('✅ Direct API Success', true, {
+                    totalProducts: data.data?.totalElements || 0,
+                    productsReceived: data.data?.content?.length || 0,
+                    firstProduct: data.data?.content?.[0]?.title || 'No products'
+                });
+                
+            } catch (error) {
+                console.error('Direct API Error:', error);
+                addResult(`❌ Direct API Failed: ${error.message}`, false);
+            }
+        }
+
+        async function testProxyAPI() {
+            try {
+                console.log('Testing proxy API...');
+                const response = await fetch('/api/v1/products?size=2', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                addResult('✅ Proxy API Success', true, {
+                    totalProducts: data.data?.totalElements || 0,
+                    productsReceived: data.data?.content?.length || 0,
+                    firstProduct: data.data?.content?.[0]?.title || 'No products'
+                });
+                
+            } catch (error) {
+                console.error('Proxy API Error:', error);
+                addResult(`❌ Proxy API Failed: ${error.message}`, false);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            addResult('🔄 Starting API connectivity tests...', true);
+            setTimeout(() => {
+                testDirectAPI();
+                setTimeout(() => testProxyAPI(), 2000);
+            }, 500);
+        };
+    </script>
+</body>
+</html>
