@@ -6,20 +6,20 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-FROM openjdk:17-jdk-slim AS backend-build
+FROM eclipse-temurin:17-jdk-alpine AS backend-build
 
 WORKDIR /app
 COPY mvnw.cmd mvnw ./
 COPY .mvn .mvn
 COPY pom.xml ./
 RUN chmod +x mvnw
-RUN ./mvnw dependency:go-offline
+RUN ./mvnw dependency:resolve
 
 COPY src ./src
 COPY --from=frontend-build /app/frontend/build ./src/main/resources/static
 RUN ./mvnw clean package -DskipTests
 
-FROM openjdk:17-jre-slim
+FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 COPY --from=backend-build /app/target/modern-product-search-1.0.0.jar app.jar
