@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Modern Product Search API
   product-api:
     build:
       context: .
@@ -10,22 +9,14 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Spring profiles
       - SPRING_PROFILES_ACTIVE=docker
-      
-      # External API configuration
       - EXTERNAL_API_BASE_URL=https://dummyjson.com
       - EXTERNAL_API_TIMEOUT_CONNECT=5000
       - EXTERNAL_API_TIMEOUT_READ=10000
-      
-      # JVM options
       - JAVA_OPTS=-Xmx512m -Xms256m -XX:+UseG1GC
-      
-      # Logging
       - LOGGING_LEVEL_COM_PRODUCTAPI=INFO
       - LOGGING_LEVEL_ROOT=WARN
     volumes:
-      # Mount volumes for persistence (optional for H2 in-memory)
       - ./logs:/app/logs
       - ./lucene-index:/app/lucene
     networks:
@@ -38,69 +29,7 @@ services:
       retries: 3
       start_period: 60s
 
-  # Optional: PostgreSQL for production use
-  # Uncomment if you want to use PostgreSQL instead of H2
-  # postgres:
-  #   image: postgres:15-alpine
-  #   container_name: product-api-postgres
-  #   environment:
-  #     - POSTGRES_DB=productdb
-  #     - POSTGRES_USER=productapi
-  #     - POSTGRES_PASSWORD=productapi123
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
-  #   networks:
-  #     - product-api-network
-  #   restart: unless-stopped
 
-  # Optional: Elasticsearch for production search
-  # Uncomment if you want to use Elasticsearch instead of Lucene
-  # elasticsearch:
-  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-  #   container_name: product-api-elasticsearch
-  #   environment:
-  #     - discovery.type=single-node
-  #     - xpack.security.enabled=false
-  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-  #   volumes:
-  #     - elasticsearch_data:/usr/share/elasticsearch/data
-  #   ports:
-  #     - "9200:9200"
-  #     - "9300:9300"
-  #   networks:
-  #     - product-api-network
-  #   restart: unless-stopped
-
-  # Optional: Redis for caching
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: product-api-redis
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   networks:
-  #     - product-api-network
-  #   restart: unless-stopped
-  #   command: redis-server --appendonly yes
-
-  # Optional: Nginx reverse proxy
-  # nginx:
-  #   image: nginx:alpine
-  #   container_name: product-api-nginx
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
-  #     - ./ssl:/etc/nginx/ssl:ro
-  #   depends_on:
-  #     - product-api
-  #   networks:
-  #     - product-api-network
-  #   restart: unless-stopped
 
 networks:
   product-api-network:
@@ -108,14 +37,3 @@ networks:
     name: product-api-network
 
 volumes:
-  # Uncomment if using PostgreSQL
-  # postgres_data:
-  #   driver: local
-  
-  # Uncomment if using Elasticsearch
-  # elasticsearch_data:
-  #   driver: local
-  
-  # Uncomment if using Redis
-  # redis_data:
-  #   driver: local

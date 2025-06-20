@@ -9,10 +9,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Product entity representing a product in the system.
- * Configured for full-text search using Hibernate Search.
- */
+
 @Entity
 @Table(name = "products")
 public class Product {
@@ -116,7 +113,7 @@ public class Product {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // Constructors
+
     public Product() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
@@ -129,13 +126,13 @@ public class Product {
         this.description = description;
     }
 
-    // Lifecycle callbacks
+
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+
     public Long getId() {
         return id;
     }

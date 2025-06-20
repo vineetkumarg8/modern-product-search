@@ -7,7 +7,7 @@ spring:
   application:
     name: modern-product-search
   
-  # H2 Database Configuration
+
   datasource:
     url: jdbc:h2:mem:productdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
@@ -21,7 +21,7 @@ spring:
       settings:
         web-allow-others: true
   
-  # JPA Configuration
+
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
@@ -30,7 +30,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        # Hibernate Search Configuration
+
         search:
           backend:
             type: lucene
@@ -41,11 +41,11 @@ spring:
             synchronization:
               strategy: sync
 
-  # WebFlux Configuration for External API calls
+
   webflux:
     base-path: /api/v1
 
-# External API Configuration
+
 external:
   api:
     products:
@@ -60,7 +60,7 @@ external:
         max-attempts: 3
         delay: 1000
 
-# Resilience4j Configuration
+
 resilience4j:
   circuitbreaker:
     instances:
@@ -88,7 +88,7 @@ resilience4j:
       external-api:
         timeout-duration: 10s
 
-# Logging Configuration
+
 logging:
   level:
     com.productapi: DEBUG
@@ -98,7 +98,7 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
-# Management and Actuator
+
 management:
   endpoints:
     web:
@@ -111,7 +111,7 @@ management:
     circuitbreakers:
       enabled: true
 
-# OpenAPI Documentation
+
 springdoc:
   api-docs:
     path: /api-docs

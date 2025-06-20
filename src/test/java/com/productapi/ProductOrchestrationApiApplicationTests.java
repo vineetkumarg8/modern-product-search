@@ -10,6 +10,5 @@ class ProductOrchestrationApiApplicationTests {
 
     @Test
     void contextLoads() {
-        // Test that the Spring context loads successfully
     }
 }
