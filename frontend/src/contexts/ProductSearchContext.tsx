@@ -14,6 +14,7 @@ type ProductSearchAction =
   | { type: 'SET_SORT_OPTION'; payload: SortOption }
   | { type: 'SET_PAGINATION'; payload: Partial<ProductSearchState['pagination']> }
   | { type: 'SET_SUGGESTIONS'; payload: string[] }
+  | { type: 'CLEAR_SEARCH' }
   | { type: 'RESET_STATE' };
 
 // Initial state
@@ -79,7 +80,15 @@ function productSearchReducer(state: ProductSearchState, action: ProductSearchAc
     
     case 'SET_SUGGESTIONS':
       return { ...state, suggestions: action.payload };
-    
+
+    case 'CLEAR_SEARCH':
+      return {
+        ...state,
+        searchQuery: '',
+        suggestions: [],
+        filteredProducts: state.products
+      };
+
     case 'RESET_STATE':
       return initialState;
     
@@ -100,6 +109,7 @@ interface ProductSearchContextType {
     applyClientSideSorting: () => void;
     getSuggestions: (query: string) => Promise<void>;
     loadData: () => Promise<void>;
+    clearSearch: () => void;
     resetState: () => void;
   };
 }
@@ -268,6 +278,11 @@ export const ProductSearchProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [loadProducts]);
 
+  // Clear search
+  const clearSearch = useCallback(() => {
+    dispatch({ type: 'CLEAR_SEARCH' });
+  }, []);
+
   // Reset state
   const resetState = useCallback(() => {
     dispatch({ type: 'RESET_STATE' });
@@ -296,6 +311,7 @@ export const ProductSearchProvider: React.FC<{ children: React.ReactNode }> = ({
       applyClientSideSorting,
       getSuggestions,
       loadData,
+      clearSearch,
       resetState,
     },
   };

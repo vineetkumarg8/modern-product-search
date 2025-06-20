@@ -206,6 +206,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const navigate = useNavigate();
   const { state, actions } = useProductSearch();
   const [query, setQuery] = useState(state.searchQuery);
+
+  // Sync local state with global state
+  useEffect(() => {
+    setQuery(state.searchQuery);
+  }, [state.searchQuery]);
   const [showSuggestionsList, setShowSuggestionsList] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const [isSearching, setIsSearching] = useState(false);
@@ -319,6 +324,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const handleClear = () => {
     setQuery('');
     setShowSuggestionsList(false);
+    actions.clearSearch();
     inputRef.current?.focus();
   };
 
