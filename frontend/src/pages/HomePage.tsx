@@ -5,8 +5,11 @@ import { Container, Section, FlexContainer, Button, Card } from '../styles/AppSt
 import { SearchBar } from '../components/search/SearchBar';
 import { ProductGrid } from '../components/product/ProductGrid';
 import { Loading } from '../components/common/Loading';
+import { Product } from '../types';
 
 import { useProductSearch } from '../contexts/ProductSearchContext';
+import { DebugPanel } from '../components/debug/DebugPanel';
+import { productService } from '../services/productService';
 
 // Styled components
 const HeroSection = styled(Section)`
@@ -114,13 +117,19 @@ const QuickActionsTitle = styled.h2`
   margin-bottom: ${({ theme }) => theme.spacing.xl};
 `;
 
-const QuickActionsGrid = styled.div`
+const CategoryGroupsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: ${({ theme }) => theme.spacing.lg};
-  
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: ${({ theme }) => theme.spacing.xl};
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: ${({ theme }) => theme.spacing.lg};
+  }
+
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     grid-template-columns: 1fr;
+    gap: ${({ theme }) => theme.spacing.md};
   }
 `;
 
@@ -128,11 +137,88 @@ const QuickActionCard = styled(Card)`
   padding: ${({ theme }) => theme.spacing.lg};
   cursor: pointer;
   transition: all ${({ theme }) => theme.transitions.normal};
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${({ theme }) => theme.shadows.lg};
   }
+`;
+
+const CategoryGroupCard = styled(Card)`
+  padding: ${({ theme }) => theme.spacing.xl};
+  cursor: pointer;
+  transition: all ${({ theme }) => theme.transitions.normal};
+  border: 2px solid transparent;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: ${({ theme }) => theme.shadows.xl};
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const CategoryGroupHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  padding-bottom: ${({ theme }) => theme.spacing.md};
+  border-bottom: 2px solid ${({ theme }) => theme.colors.border};
+`;
+
+const CategoryEmoji = styled.div`
+  font-size: 2.5rem;
+  line-height: 1;
+`;
+
+const CategoryGroupInfo = styled.div`
+  flex: 1;
+`;
+
+const CategoryGroupTitle = styled.h3`
+  margin: 0 0 ${({ theme }) => theme.spacing.xs} 0;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: ${({ theme }) => theme.typography.fontSize.xl};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
+`;
+
+const CategoryGroupCount = styled.div`
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+`;
+
+const SubcategoriesList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: ${({ theme }) => theme.spacing.sm};
+`;
+
+const SubcategoryItem = styled.div`
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  background: ${({ theme }) => theme.colors.background};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  cursor: pointer;
+  transition: all ${({ theme }) => theme.transitions.fast};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primary};
+    color: white;
+    transform: translateY(-1px);
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const SubcategoryName = styled.div`
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  margin-bottom: 2px;
+`;
+
+const SubcategoryCount = styled.div`
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  opacity: 0.8;
 `;
 
 const RecentProductsSection = styled(Section)`
@@ -179,7 +265,7 @@ const StatLabel = styled.div`
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { state, actions } = useProductSearch();
-  const [recentProducts, setRecentProducts] = useState(state.products.slice(0, 8));
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState({
     totalProducts: 0,
     categories: 0,
@@ -187,54 +273,80 @@ export const HomePage: React.FC = () => {
   });
 
 
-  // Load initial data
+  // Load initial data - separate from search results
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        // Load some products for display
-        if (state.products.length === 0) {
-          await actions.loadProducts(0, 12);
+        // Only load if we don't have featured products yet
+        if (featuredProducts.length === 0) {
+          // Load featured products (first 12 for display)
+          const featuredResponse = await productService.getProducts({ page: 0, size: 12 });
+          setFeaturedProducts(featuredResponse.content.slice(0, 8));
+
+          // Load all products to calculate accurate stats
+          const totalPages = featuredResponse.totalPages;
+          let allProducts: any[] = [];
+
+          // Load all pages to get complete data for stats
+          for (let page = 0; page < totalPages; page++) {
+            const pageResponse = await productService.getProducts({
+              page,
+              size: 20 // Use reasonable page size
+            });
+            allProducts = allProducts.concat(pageResponse.content);
+          }
+
+          // Calculate accurate stats from all products
+          const uniqueCategories = new Set(allProducts.map(p => p.category).filter(c => c && c.trim())).size;
+          const uniqueBrands = new Set(allProducts.map(p => p.brand).filter(b => b && b.trim())).size;
+
+          setStats({
+            totalProducts: featuredResponse.totalElements,
+            categories: uniqueCategories,
+            brands: uniqueBrands,
+          });
         }
-        
-        // Update recent products
-        setRecentProducts(state.products.slice(0, 8));
-        
-        // Calculate stats
-        const uniqueCategories = new Set(state.products.map(p => p.category)).size;
-        const uniqueBrands = new Set(state.products.map(p => p.brand)).size;
-        
-        setStats({
-          totalProducts: state.pagination.totalElements || state.products.length,
-          categories: uniqueCategories,
-          brands: uniqueBrands,
-        });
       } catch (error) {
         console.error('Failed to load initial data:', error);
       }
     };
 
     loadInitialData();
-  }, [actions, state.products, state.pagination.totalElements]);
+  }, []); // Empty dependency array - only run once on mount
 
   // Handle search from hero section
   const handleHeroSearch = (query: string) => {
     navigate(`/search?q=${encodeURIComponent(query)}`);
   };
 
-  // Quick action handlers
-  const handleQuickAction = (action: string) => {
+  // Category group handlers
+  const handleCategoryGroup = (action: string) => {
     switch (action) {
-      case 'beauty':
-        navigate('/search?category=beauty');
+      case 'beauty-group':
+        // Navigate to search with beauty-related categories
+        navigate('/search?q=beauty OR fragrances OR skin-care');
         break;
-      case 'electronics':
-        navigate('/search?category=electronics');
+      case 'fashion-group':
+        // Navigate to search with fashion-related terms
+        navigate('/search?q=fashion OR clothing OR apparel');
         break;
-      case 'clothing':
-        navigate('/search?category=clothing');
+      case 'electronics-group':
+        // Navigate to search with electronics-related terms
+        navigate('/search?q=electronics OR gadgets OR tech');
         break;
-      case 'home':
-        navigate('/search?category=home-decoration');
+      case 'home-group':
+        // Navigate to search with home-related terms
+        navigate('/search?q=home OR furniture OR kitchen');
+        break;
+      case 'groceries-group':
+        navigate('/search?category=groceries');
+        break;
+      case 'automobile-group':
+        // Navigate to search with automobile-related terms
+        navigate('/search?q=vehicle OR motorcycle OR automotive');
+        break;
+      case 'sports-group':
+        navigate('/search?category=sports-accessories');
         break;
       case 'load-data':
         actions.loadData();
@@ -242,6 +354,11 @@ export const HomePage: React.FC = () => {
       default:
         navigate('/search');
     }
+  };
+
+  // Handle subcategory clicks
+  const handleSubcategoryClick = (category: string) => {
+    navigate(`/search?category=${category}`);
   };
 
   const features = [
@@ -277,15 +394,92 @@ export const HomePage: React.FC = () => {
     },
   ];
 
-  const quickActions = [
-    { icon: 'fas fa-palette', title: 'Beauty Products', action: 'beauty' },
-    { icon: 'fas fa-laptop', title: 'Electronics', action: 'electronics' },
-    { icon: 'fas fa-tshirt', title: 'Clothing', action: 'clothing' },
-    { icon: 'fas fa-home', title: 'Home & Decor', action: 'home' },
+  const categoryGroups = [
+    {
+      emoji: '🧴',
+      title: 'Beauty & Personal Care',
+      action: 'beauty-group',
+      productCount: 13,
+      subcategories: [
+        { name: 'Beauty', category: 'beauty', count: 5 },
+        { name: 'Skin Care', category: 'skin-care', count: 3 },
+        { name: 'Fragrances', category: 'fragrances', count: 5 }
+      ]
+    },
+    {
+      emoji: '🧍‍♂️🧍‍♀️',
+      title: 'Fashion & Apparel',
+      action: 'fashion-group',
+      productCount: 39,
+      subcategories: [
+        { name: 'Men\'s Shirts', category: 'mens-shirts', count: 5 },
+        { name: 'Men\'s Shoes', category: 'mens-shoes', count: 5 },
+        { name: 'Men\'s Watches', category: 'mens-watches', count: 6 },
+        { name: 'Sunglasses', category: 'sunglasses', count: 5 },
+        { name: 'Tops', category: 'tops', count: 5 },
+        { name: 'Women\'s Bags', category: 'womens-bags', count: 5 },
+        { name: 'Women\'s Dresses', category: 'womens-dresses', count: 5 },
+        { name: 'Women\'s Jewellery', category: 'womens-jewellery', count: 3 },
+        { name: 'Women\'s Shoes', category: 'womens-shoes', count: 5 },
+        { name: 'Women\'s Watches', category: 'womens-watches', count: 5 }
+      ]
+    },
+    {
+      emoji: '💻',
+      title: 'Electronics & Gadgets',
+      action: 'electronics-group',
+      productCount: 38,
+      subcategories: [
+        { name: 'Smartphones', category: 'smartphones', count: 16 },
+        { name: 'Tablets', category: 'tablets', count: 3 },
+        { name: 'Laptops', category: 'laptops', count: 5 },
+        { name: 'Mobile Accessories', category: 'mobile-accessories', count: 14 }
+      ]
+    },
+    {
+      emoji: '🏡',
+      title: 'Home & Living',
+      action: 'home-group',
+      productCount: 40,
+      subcategories: [
+        { name: 'Furniture', category: 'furniture', count: 5 },
+        { name: 'Home Decoration', category: 'home-decoration', count: 5 },
+        { name: 'Kitchen Accessories', category: 'kitchen-accessories', count: 30 }
+      ]
+    },
+    {
+      emoji: '🛒',
+      title: 'Groceries & Essentials',
+      action: 'groceries-group',
+      productCount: 27,
+      subcategories: [
+        { name: 'Groceries', category: 'groceries', count: 27 }
+      ]
+    },
+    {
+      emoji: '🏍️',
+      title: 'Automobile & Outdoors',
+      action: 'automobile-group',
+      productCount: 10,
+      subcategories: [
+        { name: 'Motorcycle', category: 'motorcycle', count: 5 },
+        { name: 'Vehicle', category: 'vehicle', count: 5 }
+      ]
+    },
+    {
+      emoji: '🏀',
+      title: 'Sports & Fitness',
+      action: 'sports-group',
+      productCount: 17,
+      subcategories: [
+        { name: 'Sports Accessories', category: 'sports-accessories', count: 17 }
+      ]
+    }
   ];
 
   return (
     <>
+      <DebugPanel />
       {/* Hero Section */}
       <HeroSection>
         <Container>
@@ -322,30 +516,43 @@ export const HomePage: React.FC = () => {
         </Container>
       </HeroSection>
 
-      {/* Quick Actions */}
+      {/* Category Groups */}
       <Section>
         <Container>
           <QuickActionsSection>
             <QuickActionsTitle>Browse by Category</QuickActionsTitle>
-            <QuickActionsGrid>
-              {quickActions.map((action, index) => (
-                <QuickActionCard
+            <CategoryGroupsGrid>
+              {categoryGroups.map((group, index) => (
+                <CategoryGroupCard
                   key={index}
-                  onClick={() => handleQuickAction(action.action)}
                   shadow
                   hover
                 >
-                  <FlexContainer align="center" gap="1rem">
-                    <div style={{ fontSize: '2rem', color: 'var(--primary-color)' }}>
-                      <i className={action.icon} />
-                    </div>
-                    <div>
-                      <h4>{action.title}</h4>
-                    </div>
-                  </FlexContainer>
-                </QuickActionCard>
+                  <CategoryGroupHeader onClick={() => handleCategoryGroup(group.action)}>
+                    <CategoryEmoji>{group.emoji}</CategoryEmoji>
+                    <CategoryGroupInfo>
+                      <CategoryGroupTitle>{group.title}</CategoryGroupTitle>
+                      <CategoryGroupCount>{group.productCount} products</CategoryGroupCount>
+                    </CategoryGroupInfo>
+                  </CategoryGroupHeader>
+
+                  <SubcategoriesList>
+                    {group.subcategories.map((subcategory, subIndex) => (
+                      <SubcategoryItem
+                        key={subIndex}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSubcategoryClick(subcategory.category);
+                        }}
+                      >
+                        <SubcategoryName>{subcategory.name}</SubcategoryName>
+                        <SubcategoryCount>{subcategory.count} items</SubcategoryCount>
+                      </SubcategoryItem>
+                    ))}
+                  </SubcategoriesList>
+                </CategoryGroupCard>
               ))}
-            </QuickActionsGrid>
+            </CategoryGroupsGrid>
           </QuickActionsSection>
         </Container>
       </Section>
@@ -379,23 +586,19 @@ export const HomePage: React.FC = () => {
         </Container>
       </FeaturesSection>
 
-      {/* Recent Products */}
-      {recentProducts.length > 0 && (
+      {/* Featured Products */}
+      {featuredProducts.length > 0 && (
         <RecentProductsSection>
           <Container>
             <SectionTitle>Featured Products</SectionTitle>
-            {state.loading ? (
-              <Loading message="Loading featured products..." />
-            ) : (
-              <ProductGrid 
-                products={recentProducts}
-                showStats={false}
-              />
-            )}
-            
+            <ProductGrid
+              products={featuredProducts}
+              showStats={false}
+            />
+
             <FlexContainer justify="center" style={{ marginTop: '2rem' }}>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => navigate('/search')}
               >
                 View All Products

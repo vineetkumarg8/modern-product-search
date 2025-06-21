@@ -178,21 +178,25 @@ export const SearchResultsPage: React.FC = () => {
   useEffect(() => {
     const loadSearchResults = async () => {
       setHasSearched(true);
-      
+
       try {
         if (query) {
-          // Text search
+          // Text search - clear filters first
+          actions.setFilters({});
           await actions.searchProducts(query);
-        } else if (category || brand) {
-          // Filter-based search
-          const filters: any = {};
-          if (category) filters.category = category;
-          if (brand) filters.brand = brand;
-          
+        } else if (category) {
+          // Category-based search using backend endpoint
+          // Set the category filter so it shows in active filters
+          actions.setFilters({ category });
+          await actions.loadProductsByCategory(category);
+        } else if (brand) {
+          // Brand-based search - use client-side filtering
+          const filters: any = { brand };
           actions.setFilters(filters);
           await actions.loadProducts();
         } else {
-          // Load all products
+          // Load all products - clear filters
+          actions.setFilters({});
           await actions.loadProducts();
         }
       } catch (error) {
@@ -201,7 +205,7 @@ export const SearchResultsPage: React.FC = () => {
     };
 
     loadSearchResults();
-  }, [query, category, brand, actions]);
+  }, [query, category, brand]); // Stable actions, no need to include
 
   // Handle new search
   const handleSearch = async (newQuery: string) => {

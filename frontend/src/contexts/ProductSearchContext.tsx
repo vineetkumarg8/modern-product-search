@@ -11,6 +11,7 @@ type ProductSearchAction =
   | { type: 'SET_FILTERED_PRODUCTS'; payload: Product[] }
   | { type: 'SET_SEARCH_QUERY'; payload: string }
   | { type: 'SET_FILTERS'; payload: Partial<SearchFilters> }
+  | { type: 'REPLACE_FILTERS'; payload: SearchFilters }
   | { type: 'SET_SORT_OPTION'; payload: SortOption }
   | { type: 'SET_PAGINATION'; payload: Partial<ProductSearchState['pagination']> }
   | { type: 'SET_SUGGESTIONS'; payload: string[] }
@@ -71,7 +72,10 @@ function productSearchReducer(state: ProductSearchState, action: ProductSearchAc
     
     case 'SET_FILTERS':
       return { ...state, filters: { ...state.filters, ...action.payload } };
-    
+
+    case 'REPLACE_FILTERS':
+      return { ...state, filters: action.payload };
+
     case 'SET_SORT_OPTION':
       return { ...state, sortOption: action.payload };
     
@@ -103,7 +107,9 @@ interface ProductSearchContextType {
   actions: {
     searchProducts: (query: string, fuzzy?: boolean) => Promise<void>;
     loadProducts: (page?: number, size?: number) => Promise<void>;
+    loadProductsByCategory: (category: string, page?: number, size?: number) => Promise<void>;
     setFilters: (filters: Partial<SearchFilters>) => void;
+    replaceFilters: (filters: SearchFilters) => void;
     setSortOption: (sortOption: SortOption) => void;
     applyClientSideFiltering: () => void;
     applyClientSideSorting: () => void;
@@ -146,12 +152,11 @@ export const ProductSearchProvider: React.FC<{ children: React.ReactNode }> = ({
         totalPages: response.totalPages,
       }});
 
-      // Apply client-side filtering and sorting
-      applyClientSideFiltering();
+      // Filtering and sorting will be handled by useEffect
     } catch (error: any) {
       dispatch({ type: 'SET_ERROR', payload: error.message || 'Search failed' });
     }
-  }, [state.pagination.size]);
+  }, []);
 
   // Load products (for initial load or pagination)
   const loadProducts = useCallback(async (page?: number, size?: number) => {
@@ -175,16 +180,48 @@ export const ProductSearchProvider: React.FC<{ children: React.ReactNode }> = ({
         totalPages: response.totalPages,
       }});
 
-      // Apply client-side filtering
-      applyClientSideFiltering();
+      // Filtering and sorting will be handled by useEffect
     } catch (error: any) {
       dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to load products' });
     }
-  }, [state.sortOption]);
+  }, []);
+
+  // Load products by category
+  const loadProductsByCategory = useCallback(async (category: string, page?: number, size?: number) => {
+    const actualPage = page ?? 0;
+    const actualSize = size ?? SEARCH_CONFIG.DEFAULT_PAGE_SIZE;
+    dispatch({ type: 'SET_LOADING', payload: true });
+
+    try {
+      const response = await productService.getProductsByCategory(category, {
+        page: actualPage,
+        size: actualSize,
+        sort: state.sortOption.field,
+        direction: state.sortOption.direction,
+      });
+
+      dispatch({ type: 'SET_PRODUCTS', payload: response.content });
+      dispatch({ type: 'SET_PAGINATION', payload: {
+        page: response.page,
+        size: response.size,
+        totalElements: response.totalElements,
+        totalPages: response.totalPages,
+      }});
+
+      // Filtering and sorting will be handled by useEffect
+    } catch (error: any) {
+      dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to load products by category' });
+    }
+  }, []);
 
   // Set filters
   const setFilters = useCallback((filters: Partial<SearchFilters>) => {
     dispatch({ type: 'SET_FILTERS', payload: filters });
+  }, []);
+
+  // Replace filters completely
+  const replaceFilters = useCallback((filters: SearchFilters) => {
+    dispatch({ type: 'REPLACE_FILTERS', payload: filters });
   }, []);
 
   // Set sort option
@@ -288,24 +325,72 @@ export const ProductSearchProvider: React.FC<{ children: React.ReactNode }> = ({
     dispatch({ type: 'RESET_STATE' });
   }, []);
 
-  // Apply filtering when filters change
+  // Apply filtering and sorting when products, filters, or sort option change
   useEffect(() => {
-    applyClientSideFiltering();
-  }, [applyClientSideFiltering]);
+    let filtered = [...state.products];
 
-  // Apply sorting when sort option or filtered products change
-  useEffect(() => {
-    if (state.filteredProducts.length > 0) {
-      applyClientSideSorting();
+    // Apply filters
+    if (state.filters.brand) {
+      filtered = filtered.filter(product => product.brand === state.filters.brand);
     }
-  }, [state.sortOption, applyClientSideSorting]);
+
+    if (state.filters.category) {
+      filtered = filtered.filter(product => product.category === state.filters.category);
+    }
+
+    if (state.filters.minPrice !== undefined) {
+      filtered = filtered.filter(product => product.price >= state.filters.minPrice!);
+    }
+    if (state.filters.maxPrice !== undefined) {
+      filtered = filtered.filter(product => product.price <= state.filters.maxPrice!);
+    }
+
+    if (state.filters.minRating !== undefined) {
+      filtered = filtered.filter(product => product.rating >= state.filters.minRating!);
+    }
+
+    if (state.filters.availabilityStatus) {
+      filtered = filtered.filter(product => product.availabilityStatus === state.filters.availabilityStatus);
+    }
+
+    // Apply sorting
+    if (filtered.length > 0) {
+      const sorted = [...filtered].sort((a, b) => {
+        const { field, direction } = state.sortOption;
+        let aValue: any = a[field];
+        let bValue: any = b[field];
+
+        // Handle different data types
+        if (field === 'price' || field === 'rating') {
+          aValue = Number(aValue) || 0;
+          bValue = Number(bValue) || 0;
+        } else if (field === 'createdAt') {
+          aValue = new Date(aValue).getTime();
+          bValue = new Date(bValue).getTime();
+        } else {
+          aValue = String(aValue).toLowerCase();
+          bValue = String(bValue).toLowerCase();
+        }
+
+        if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      dispatch({ type: 'SET_FILTERED_PRODUCTS', payload: sorted });
+    } else {
+      dispatch({ type: 'SET_FILTERED_PRODUCTS', payload: filtered });
+    }
+  }, [state.products, state.filters, state.sortOption]);
 
   const contextValue: ProductSearchContextType = {
     state,
     actions: {
       searchProducts,
       loadProducts,
+      loadProductsByCategory,
       setFilters,
+      replaceFilters,
       setSortOption,
       applyClientSideFiltering,
       applyClientSideSorting,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useSearchParams } from 'react-router-dom';
 import { useProductSearch, SORT_OPTIONS } from '../../contexts/ProductSearchContext';
 import { SearchFilters, SortOption } from '../../types';
 import { productService } from '../../services/productService';
@@ -161,7 +162,9 @@ interface FilterPanelProps {
  */
 export const FilterPanel: React.FC<FilterPanelProps> = ({ className }) => {
   const { state, actions } = useProductSearch();
-  const [brands, setBrands] = useState<string[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [allBrands, setAllBrands] = useState<string[]>([]);
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [localFilters, setLocalFilters] = useState<SearchFilters>(state.filters);
 
@@ -173,7 +176,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ className }) => {
           productService.getBrands(),
           productService.getCategories(),
         ]);
-        setBrands(brandsData);
+        setAllBrands(brandsData);
+        setAvailableBrands(brandsData); // Initially show all brands
         setCategories(categoriesData);
       } catch (error) {
         console.error('Failed to load filter options:', error);
@@ -183,6 +187,25 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ className }) => {
     loadFilterOptions();
   }, []);
 
+  // Update available brands when category changes
+  useEffect(() => {
+    const updateAvailableBrands = async () => {
+      if (localFilters.category) {
+        try {
+          const categoryBrands = await productService.getBrandsByCategory(localFilters.category);
+          setAvailableBrands(categoryBrands);
+        } catch (error) {
+          console.error('Failed to load brands for category:', error);
+          setAvailableBrands(allBrands); // Fallback to all brands
+        }
+      } else {
+        setAvailableBrands(allBrands); // Show all brands when no category selected
+      }
+    };
+
+    updateAvailableBrands();
+  }, [localFilters.category, allBrands]);
+
   // Update local filters when global filters change
   useEffect(() => {
     setLocalFilters(state.filters);
@@ -190,20 +213,142 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ className }) => {
 
   // Handle filter changes
   const handleFilterChange = (key: keyof SearchFilters, value: any) => {
-    const newFilters = { ...localFilters, [key]: value };
+    const newFilters = { ...localFilters };
+
+    if (value === undefined || value === '' || value === null) {
+      // Remove the filter if value is empty/undefined
+      delete newFilters[key];
+    } else {
+      // Set the filter value
+      newFilters[key] = value;
+    }
+
+    // If category changes, clear the brand filter since available brands will change
+    if (key === 'category') {
+      delete newFilters.brand;
+
+      // For category changes, apply immediately to update available brands
+      setLocalFilters(newFilters);
+      actions.setFilters(newFilters);
+
+      // Update URL immediately for category changes
+      const newSearchParams = new URLSearchParams(searchParams);
+      if (newFilters.category) {
+        newSearchParams.set('category', newFilters.category);
+      } else {
+        newSearchParams.delete('category');
+      }
+      // Remove brand from URL since it was cleared
+      newSearchParams.delete('brand');
+      setSearchParams(newSearchParams);
+
+      return; // Exit early since we've already applied the changes
+    }
+
+    // For brand changes to "All Brands" (empty value), apply immediately
+    if (key === 'brand' && (value === undefined || value === '' || value === null)) {
+      // Update local state first
+      setLocalFilters(newFilters);
+
+      // Apply to global state immediately - use replaceFilters to ensure brand is completely removed
+      actions.replaceFilters(newFilters as SearchFilters);
+
+      // Update URL immediately to remove brand parameter
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('brand');
+      setSearchParams(newSearchParams);
+
+      return; // Exit early since we've already applied the changes
+    }
+
+    // For rating changes to "Any Rating" (empty value), apply immediately
+    if (key === 'minRating' && (value === undefined || value === '' || value === null)) {
+      // Update local state first
+      setLocalFilters(newFilters);
+
+      // Apply to global state immediately - use replaceFilters to ensure rating filter is completely removed
+      actions.replaceFilters(newFilters as SearchFilters);
+
+      // Update URL immediately to remove rating parameter
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('minRating');
+      setSearchParams(newSearchParams);
+
+      return; // Exit early since we've already applied the changes
+    }
+
     setLocalFilters(newFilters);
   };
 
   // Apply filters
   const applyFilters = () => {
+    // Apply the local filters to global state
     actions.setFilters(localFilters);
+
+    // Update URL to reflect applied filters
+    const newSearchParams = new URLSearchParams(searchParams);
+
+    // Handle category filter
+    if (localFilters.category) {
+      newSearchParams.set('category', localFilters.category);
+    } else {
+      newSearchParams.delete('category');
+    }
+
+    // Handle brand filter
+    if (localFilters.brand) {
+      newSearchParams.set('brand', localFilters.brand);
+    } else {
+      newSearchParams.delete('brand');
+    }
+
+    // Handle price filters
+    if (localFilters.minPrice !== undefined) {
+      newSearchParams.set('minPrice', localFilters.minPrice.toString());
+    } else {
+      newSearchParams.delete('minPrice');
+    }
+
+    if (localFilters.maxPrice !== undefined) {
+      newSearchParams.set('maxPrice', localFilters.maxPrice.toString());
+    } else {
+      newSearchParams.delete('maxPrice');
+    }
+
+    // Handle rating filter
+    if (localFilters.minRating !== undefined) {
+      newSearchParams.set('minRating', localFilters.minRating.toString());
+    } else {
+      newSearchParams.delete('minRating');
+    }
+
+    // Handle availability filter
+    if (localFilters.availabilityStatus) {
+      newSearchParams.set('availabilityStatus', localFilters.availabilityStatus);
+    } else {
+      newSearchParams.delete('availabilityStatus');
+    }
+
+    setSearchParams(newSearchParams);
   };
 
-  // Clear all filters
-  const clearFilters = () => {
-    const emptyFilters: SearchFilters = {};
-    setLocalFilters(emptyFilters);
-    actions.setFilters(emptyFilters);
+  // Clear all filters - reset to exact same state as page refresh
+  const clearFilters = async () => {
+    // Reset the entire state to initial state (same as page refresh)
+    actions.resetState();
+
+    // Reset local filter state
+    setLocalFilters({});
+
+    // Reset available brands to all brands (default state)
+    setAvailableBrands(allBrands);
+
+    // Clear URL parameters related to filters (navigate to clean /search)
+    const newSearchParams = new URLSearchParams();
+    setSearchParams(newSearchParams);
+
+    // Reload products to match page refresh behavior
+    await actions.loadProducts();
   };
 
   // Handle sort option change
@@ -216,12 +361,43 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ className }) => {
     }
   };
 
-  // Remove specific filter
+  // Remove specific filter - behave as if it was never applied
   const removeFilter = (key: keyof SearchFilters) => {
     const newFilters = { ...localFilters };
     delete newFilters[key];
+
+    // Handle hierarchical dependencies
+    if (key === 'category') {
+      // If removing category, also remove brand since it depends on category
+      delete newFilters.brand;
+      // Reset available brands to all brands
+      setAvailableBrands(allBrands);
+    }
+
+    // Update local and global state
     setLocalFilters(newFilters);
     actions.setFilters(newFilters);
+
+    // Update URL to reflect filter removal - handle all possible filter parameters
+    const newSearchParams = new URLSearchParams(searchParams);
+
+    // Remove the specific filter parameter
+    if (key === 'category') {
+      newSearchParams.delete('category');
+      newSearchParams.delete('brand'); // Also remove brand when category is removed
+    } else if (key === 'brand') {
+      newSearchParams.delete('brand');
+    } else if (key === 'minPrice') {
+      newSearchParams.delete('minPrice');
+    } else if (key === 'maxPrice') {
+      newSearchParams.delete('maxPrice');
+    } else if (key === 'minRating') {
+      newSearchParams.delete('minRating');
+    } else if (key === 'availabilityStatus') {
+      newSearchParams.delete('availabilityStatus');
+    }
+
+    setSearchParams(newSearchParams);
   };
 
   // Get active filters for display
@@ -251,7 +427,33 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ className }) => {
   };
 
   const activeFilters = getActiveFilters();
-  const hasFiltersChanged = JSON.stringify(localFilters) !== JSON.stringify(state.filters);
+
+  // Simple comparison that handles undefined values properly
+  const hasFiltersChanged = (() => {
+    const localKeys = Object.keys(localFilters);
+    const stateKeys = Object.keys(state.filters);
+
+    // Check if different number of filters
+    if (localKeys.length !== stateKeys.length) {
+      return true;
+    }
+
+    // Check each filter value
+    for (const key of localKeys) {
+      if (localFilters[key as keyof SearchFilters] !== state.filters[key as keyof SearchFilters]) {
+        return true;
+      }
+    }
+
+    // Check for filters that exist in state but not in local (i.e., were removed)
+    for (const key of stateKeys) {
+      if (!(key in localFilters)) {
+        return true;
+      }
+    }
+
+    return false;
+  })();
 
   return (
     <FilterContainer className={className}>
@@ -301,21 +503,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ className }) => {
         </FilterTitle>
         
         <FilterGrid>
-          {/* Brand Filter */}
-          <FilterGroup>
-            <Label>Brand</Label>
-            <Select
-              value={localFilters.brand || ''}
-              onChange={(e) => handleFilterChange('brand', e.target.value || undefined)}
-            >
-              <option value="">All Brands</option>
-              {brands.map(brand => (
-                <option key={brand} value={brand}>{brand}</option>
-              ))}
-            </Select>
-          </FilterGroup>
-
-          {/* Category Filter */}
+          {/* Category Filter - First */}
           <FilterGroup>
             <Label>Category</Label>
             <Select
@@ -325,6 +513,23 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ className }) => {
               <option value="">All Categories</option>
               {categories.map(category => (
                 <option key={category} value={category}>{category}</option>
+              ))}
+            </Select>
+          </FilterGroup>
+
+          {/* Brand Filter - Second (depends on category) */}
+          <FilterGroup>
+            <Label>Brand</Label>
+            <Select
+              value={localFilters.brand || ''}
+              onChange={(e) => handleFilterChange('brand', e.target.value || undefined)}
+              disabled={!localFilters.category} // Disable if no category selected
+            >
+              <option value="">
+                {localFilters.category ? 'All Brands' : 'Select Category First'}
+              </option>
+              {availableBrands.map((brand: string) => (
+                <option key={brand} value={brand}>{brand}</option>
               ))}
             </Select>
           </FilterGroup>

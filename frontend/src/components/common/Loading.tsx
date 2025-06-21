@@ -20,13 +20,15 @@ const bounce = keyframes`
 `;
 
 // Styled components
-const LoadingContainer = styled.div<{ fullScreen?: boolean; overlay?: boolean }>`
+const LoadingContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['fullScreen', 'overlay'].includes(prop),
+})<{ fullScreen?: boolean; overlay?: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: ${({ theme }) => theme.spacing.md};
-  
+
   ${({ fullScreen }) => fullScreen && `
     position: fixed;
     top: 0;
@@ -35,12 +37,12 @@ const LoadingContainer = styled.div<{ fullScreen?: boolean; overlay?: boolean }>
     bottom: 0;
     z-index: 9999;
   `}
-  
+
   ${({ overlay, theme }) => overlay && `
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(4px);
   `}
-  
+
   ${({ fullScreen, theme }) => !fullScreen && `
     padding: ${theme.spacing.xl};
   `}

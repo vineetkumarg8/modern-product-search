@@ -46,9 +46,11 @@ export const Section = styled.section<{ padding?: string; background?: string }>
   }
 `;
 
-export const Grid = styled.div<{ 
-  columns?: number; 
-  gap?: string; 
+export const Grid = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['columns', 'gap', 'minColumnWidth', 'responsive'].includes(prop),
+})<{
+  columns?: number;
+  gap?: string;
   minColumnWidth?: string;
   responsive?: boolean;
 }>`
@@ -209,7 +211,9 @@ export const Button = styled.button<{
   `}
 `;
 
-export const Input = styled.input<{ error?: boolean; icon?: boolean }>`
+export const Input = styled.input.withConfig({
+  shouldForwardProp: (prop) => !['error', 'icon'].includes(prop),
+})<{ error?: boolean; icon?: boolean }>`
   width: 100%;
   padding: ${({ theme, icon }) => icon ? 
     `${theme.spacing.sm} ${theme.spacing.md} ${theme.spacing.sm} ${theme.spacing.xxl}` : 

@@ -158,7 +158,7 @@ class ProductService {
     params: Omit<SearchParams, 'query'> = {}
   ): Promise<PagedResponse<Product>> {
     const queryParams = new URLSearchParams();
-    
+
     queryParams.append('q', query);
     queryParams.append('category', category);
     if (params.page !== undefined) queryParams.append('page', params.page.toString());
@@ -170,7 +170,7 @@ class ProductService {
 
     try {
       const response = await apiClient.get<ApiResponse<PagedResponse<Product>>>(url);
-      
+
       if (response.status === 'success') {
         return response.data;
       } else {
@@ -178,6 +178,41 @@ class ProductService {
       }
     } catch (error) {
       console.error('Error searching products by category:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get products by category (without search query)
+   */
+  async getProductsByCategory(
+    category: string,
+    params: {
+      page?: number;
+      size?: number;
+      sort?: string;
+      direction?: 'asc' | 'desc';
+    } = {}
+  ): Promise<PagedResponse<Product>> {
+    const queryParams = new URLSearchParams();
+
+    if (params.page !== undefined) queryParams.append('page', params.page.toString());
+    if (params.size !== undefined) queryParams.append('size', params.size.toString());
+    if (params.sort) queryParams.append('sort', params.sort);
+    if (params.direction) queryParams.append('direction', params.direction);
+
+    const url = `/products/category/${encodeURIComponent(category)}?${queryParams.toString()}`;
+
+    try {
+      const response = await apiClient.get<ApiResponse<PagedResponse<Product>>>(url);
+
+      if (response.status === 'success') {
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to get products by category');
+      }
+    } catch (error) {
+      console.error('Error getting products by category:', error);
       throw error;
     }
   }
@@ -279,12 +314,55 @@ class ProductService {
    */
   async getBrands(): Promise<string[]> {
     try {
-      // Get all products and extract unique brands
-      const response = await this.getProducts({ size: 1000 }); // Get a large number to capture all brands
-      const brands = [...new Set(response.content.map(product => product.brand))].filter(Boolean);
-      return brands.sort();
+      // Get products in batches since backend has max size of 100
+      const allBrands = new Set<string>();
+      let page = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await this.getProducts({ page, size: 100 });
+        response.content.forEach(product => {
+          if (product.brand) {
+            allBrands.add(product.brand);
+          }
+        });
+
+        hasMore = !response.last;
+        page++;
+      }
+
+      return Array.from(allBrands).sort();
     } catch (error) {
       console.error('Error fetching brands:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get unique brands from products within a specific category
+   */
+  async getBrandsByCategory(category: string): Promise<string[]> {
+    try {
+      // Get products in batches for the specific category
+      const allBrands = new Set<string>();
+      let page = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await this.getProductsByCategory(category, { page, size: 100 });
+        response.content.forEach(product => {
+          if (product.brand) {
+            allBrands.add(product.brand);
+          }
+        });
+
+        hasMore = !response.last;
+        page++;
+      }
+
+      return Array.from(allBrands).sort();
+    } catch (error) {
+      console.error(`Error fetching brands for category ${category}:`, error);
       return [];
     }
   }
@@ -294,10 +372,24 @@ class ProductService {
    */
   async getCategories(): Promise<string[]> {
     try {
-      // Get all products and extract unique categories
-      const response = await this.getProducts({ size: 1000 }); // Get a large number to capture all categories
-      const categories = [...new Set(response.content.map(product => product.category))].filter(Boolean);
-      return categories.sort();
+      // Get products in batches since backend has max size of 100
+      const allCategories = new Set<string>();
+      let page = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await this.getProducts({ page, size: 100 });
+        response.content.forEach(product => {
+          if (product.category) {
+            allCategories.add(product.category);
+          }
+        });
+
+        hasMore = !response.last;
+        page++;
+      }
+
+      return Array.from(allCategories).sort();
     } catch (error) {
       console.error('Error fetching categories:', error);
       return [];

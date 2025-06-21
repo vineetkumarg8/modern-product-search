@@ -134,7 +134,9 @@ const StarRating = styled.div`
   gap: 2px;
 `;
 
-const Star = styled.span<{ filled: boolean }>`
+const Star = styled.span.withConfig({
+  shouldForwardProp: (prop) => prop !== 'filled',
+})<{ filled: boolean }>`
   color: ${({ filled, theme }) => filled ? '#fbbf24' : theme.colors.border};
   font-size: ${({ theme }) => theme.typography.fontSize.sm};
 `;
@@ -313,13 +315,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Actions */}
           {showActions && (
             <ActionContainer>
-              <Button 
-                as={Link}
-                to={`/product/${product.id}`}
-                variant="primary" 
-                size="sm" 
+              <Button
+                variant="primary"
+                size="sm"
                 fullWidth
-                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  // Navigation is handled by the parent Link wrapper
+                }}
               >
                 <i className="fas fa-eye" />
                 View Details
