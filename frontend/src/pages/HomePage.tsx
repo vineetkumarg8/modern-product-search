@@ -8,7 +8,6 @@ import { Loading } from '../components/common/Loading';
 import { Product } from '../types';
 
 import { useProductSearch } from '../contexts/ProductSearchContext';
-import { DebugPanel } from '../components/debug/DebugPanel';
 import { productService } from '../services/productService';
 
 // Styled components
@@ -479,7 +478,6 @@ export const HomePage: React.FC = () => {
 
   return (
     <>
-      <DebugPanel />
       {/* Hero Section */}
       <HeroSection>
         <Container>
