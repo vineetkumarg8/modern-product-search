@@ -20,7 +20,7 @@ const getApiBaseUrl = (): string => {
     if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
       // For now, you'll need to manually set the backend URL
       // Replace this with your actual Render backend URL
-      const productionApiUrl = 'https://your-backend-app-name.onrender.com/api/v1';
+      const productionApiUrl = 'https://modern-product-search.onrender.com/api/v1';
       console.log('Using production API URL:', productionApiUrl);
       return productionApiUrl;
     }
