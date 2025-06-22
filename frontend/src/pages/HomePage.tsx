@@ -282,22 +282,34 @@ export const HomePage: React.FC = () => {
           const featuredResponse = await productService.getProducts({ page: 0, size: 12 });
           setFeaturedProducts(featuredResponse.content.slice(0, 8));
 
-          // Load all products to calculate accurate stats
-          const totalPages = featuredResponse.totalPages;
+          // Load all products to calculate accurate stats (with safety limits)
+          const totalPages = Math.min(featuredResponse.totalPages, 10); // Safety limit: max 10 pages
           let allProducts: any[] = [];
 
-          // Load all pages to get complete data for stats
-          for (let page = 0; page < totalPages; page++) {
-            const pageResponse = await productService.getProducts({
-              page,
-              size: 20 // Use reasonable page size
-            });
-            allProducts = allProducts.concat(pageResponse.content);
+          // Only load if we have actual products and reasonable page count
+          if (featuredResponse.totalElements > 0 && totalPages > 0 && totalPages <= 10) {
+            // Load all pages to get complete data for stats
+            for (let page = 0; page < totalPages; page++) {
+              const pageResponse = await productService.getProducts({
+                page,
+                size: 20 // Use reasonable page size
+              });
+              allProducts = allProducts.concat(pageResponse.content);
+
+              // Safety break if we get enough products
+              if (allProducts.length >= featuredResponse.totalElements) {
+                break;
+              }
+            }
           }
 
           // Calculate accurate stats from all products
-          const uniqueCategories = new Set(allProducts.map(p => p.category).filter(c => c && c.trim())).size;
-          const uniqueBrands = new Set(allProducts.map(p => p.brand).filter(b => b && b.trim())).size;
+          const uniqueCategories = allProducts.length > 0
+            ? new Set(allProducts.map(p => p.category).filter(c => c && c.trim())).size
+            : 0;
+          const uniqueBrands = allProducts.length > 0
+            ? new Set(allProducts.map(p => p.brand).filter(b => b && b.trim())).size
+            : 0;
 
           setStats({
             totalProducts: featuredResponse.totalElements,
