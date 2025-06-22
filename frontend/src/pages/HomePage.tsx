@@ -571,14 +571,22 @@ export const HomePage: React.FC = () => {
             ))}
           </FeaturesGrid>
 
-          <FlexContainer justify="center">
-            <Button 
-              variant="primary" 
+          <FlexContainer justify="center" gap="1rem">
+            <Button
+              variant="primary"
               size="lg"
               onClick={() => navigate('/search')}
             >
               <i className="fas fa-search" />
               Start Searching
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => handleCategoryGroup('load-data')}
+            >
+              <i className="fas fa-database" />
+              Load Data
             </Button>
           </FlexContainer>
         </Container>
