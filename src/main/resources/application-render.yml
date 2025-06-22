@@ -1,6 +1,8 @@
 spring:
   application:
     name: modern-product-search
+  profiles:
+    active: render
 
 server:
   port: ${PORT:8080}

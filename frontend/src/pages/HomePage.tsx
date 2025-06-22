@@ -280,7 +280,31 @@ export const HomePage: React.FC = () => {
         if (featuredProducts.length === 0) {
           // Load featured products (first 12 for display)
           const featuredResponse = await productService.getProducts({ page: 0, size: 12 });
-          setFeaturedProducts(featuredResponse.content.slice(0, 8));
+
+          // If no products found, try to load data automatically (for production deployments)
+          if (featuredResponse.totalElements === 0) {
+            const isProduction = window.location.hostname !== 'localhost';
+            console.log(`No products found (environment: ${isProduction ? 'production' : 'development'}), attempting to load data automatically...`);
+            try {
+              await actions.loadData();
+              // Retry loading products after data load
+              const retryResponse = await productService.getProducts({ page: 0, size: 12 });
+              setFeaturedProducts(retryResponse.content.slice(0, 8));
+
+              // Update featured response for stats calculation
+              if (retryResponse.totalElements > 0) {
+                featuredResponse.totalElements = retryResponse.totalElements;
+                featuredResponse.totalPages = retryResponse.totalPages;
+                featuredResponse.content = retryResponse.content;
+                console.log(`✅ Auto-loaded ${retryResponse.totalElements} products successfully`);
+              }
+            } catch (error) {
+              console.error('❌ Auto data loading failed:', error);
+              // Continue with empty state - user can click Load Data button
+            }
+          } else {
+            setFeaturedProducts(featuredResponse.content.slice(0, 8));
+          }
 
           // Load all products to calculate accurate stats (with safety limits)
           const totalPages = Math.min(featuredResponse.totalPages, 10); // Safety limit: max 10 pages

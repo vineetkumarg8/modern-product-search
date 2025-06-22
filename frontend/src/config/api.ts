@@ -3,9 +3,38 @@
  * Centralized configuration for API endpoints and settings
  */
 
+// Determine the correct API base URL based on environment
+const getApiBaseUrl = (): string => {
+  // If environment variable is set, use it
+  if (process.env.REACT_APP_API_BASE_URL) {
+    console.log('Using API URL from environment:', process.env.REACT_APP_API_BASE_URL);
+    return process.env.REACT_APP_API_BASE_URL;
+  }
+
+  // For production builds, try to detect the current domain
+  if (process.env.NODE_ENV === 'production') {
+    const currentHost = window.location.hostname;
+    console.log('Production mode detected, current host:', currentHost);
+
+    // If running on Render or other production domain
+    if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+      // For now, you'll need to manually set the backend URL
+      // Replace this with your actual Render backend URL
+      const productionApiUrl = 'https://your-backend-app-name.onrender.com/api/v1';
+      console.log('Using production API URL:', productionApiUrl);
+      return productionApiUrl;
+    }
+  }
+
+  // Fallback to localhost for development
+  const devApiUrl = 'http://localhost:8080/api/v1';
+  console.log('Using development API URL:', devApiUrl);
+  return devApiUrl;
+};
+
 // Environment-based configuration
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api/v1',
+  BASE_URL: getApiBaseUrl(),
   TIMEOUT: parseInt(process.env.REACT_APP_API_TIMEOUT || '10000'),
   RETRY_ATTEMPTS: parseInt(process.env.REACT_APP_API_RETRY_ATTEMPTS || '3'),
   RETRY_DELAY: parseInt(process.env.REACT_APP_API_RETRY_DELAY || '1000'),
