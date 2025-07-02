@@ -3,12 +3,18 @@ services:
     name: modern-product-search
     env: java
     buildCommand: |
-      mvn clean package -DskipTests
+      echo "Building frontend..."
       cd frontend
       npm install
       npm run build
+      echo "Frontend build complete, copying files..."
       mkdir -p ../src/main/resources/static
       cp -r build/* ../src/main/resources/static/
+      ls -la ../src/main/resources/static/
+      echo "Building backend..."
+      cd ..
+      mvn clean package -DskipTests
+      echo "Build complete!"
     startCommand: java -Dserver.port=$PORT -Dspring.profiles.active=render -jar target/product-orchestration-api-0.0.1-SNAPSHOT.jar
     envVars:
       - key: SPRING_PROFILES_ACTIVE
