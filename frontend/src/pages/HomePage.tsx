@@ -270,23 +270,36 @@ export const HomePage: React.FC = () => {
     categories: 0,
     brands: 0,
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dataLoadAttempted, setDataLoadAttempted] = useState(false);
 
 
   // Load initial data - separate from search results
   useEffect(() => {
     const loadInitialData = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
         // Only load if we don't have featured products yet
         if (featuredProducts.length === 0) {
+          console.log('🔄 Loading initial data...');
+
           // Load featured products (first 12 for display)
           const featuredResponse = await productService.getProducts({ page: 0, size: 12 });
 
-          // If no products found, try to load data automatically (for production deployments)
+          // If no products found, try to load data automatically
           if (featuredResponse.totalElements === 0) {
             const isProduction = window.location.hostname !== 'localhost';
-            console.log(`No products found (environment: ${isProduction ? 'production' : 'development'}), attempting to load data automatically...`);
+            const environment = isProduction ? 'production' : 'development';
+            console.log(`⚠️ No products found (environment: ${environment}), attempting to load data automatically...`);
+
+            setDataLoadAttempted(true);
             try {
               await actions.loadData();
+              console.log('✅ Data load initiated, retrying product fetch...');
+
               // Retry loading products after data load
               const retryResponse = await productService.getProducts({ page: 0, size: 12 });
               setFeaturedProducts(retryResponse.content.slice(0, 8));
@@ -297,13 +310,18 @@ export const HomePage: React.FC = () => {
                 featuredResponse.totalPages = retryResponse.totalPages;
                 featuredResponse.content = retryResponse.content;
                 console.log(`✅ Auto-loaded ${retryResponse.totalElements} products successfully`);
+              } else {
+                throw new Error('No products available after data load attempt');
               }
-            } catch (error) {
-              console.error('❌ Auto data loading failed:', error);
-              // Continue with empty state - user can click Load Data button
+            } catch (dataLoadError: any) {
+              console.error('❌ Auto data loading failed:', dataLoadError);
+              const errorMessage = dataLoadError.message || 'Failed to load data from external API';
+              setError(`Unable to load product data: ${errorMessage}. This could be due to network connectivity issues or backend server not running.`);
+              return; // Exit early on data load failure
             }
           } else {
             setFeaturedProducts(featuredResponse.content.slice(0, 8));
+            console.log(`✅ Loaded ${featuredResponse.totalElements} products from database`);
           }
 
           // Load all products to calculate accurate stats (with safety limits)
@@ -341,13 +359,52 @@ export const HomePage: React.FC = () => {
             brands: uniqueBrands,
           });
         }
-      } catch (error) {
-        console.error('Failed to load initial data:', error);
+      } catch (error: any) {
+        console.error('❌ Failed to load initial data:', error);
+        const errorMessage = error.message || 'Unknown error occurred';
+        setError(`Failed to connect to the backend server: ${errorMessage}. Please check if the backend is running on port 8080.`);
+      } finally {
+        setLoading(false);
       }
     };
 
     loadInitialData();
   }, []); // Empty dependency array - only run once on mount
+
+  // Manual data loading function
+  const handleLoadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('🔄 Manually loading data from external API...');
+
+      await actions.loadData();
+
+      // Reload the page data
+      const response = await productService.getProducts({ page: 0, size: 12 });
+      setFeaturedProducts(response.content.slice(0, 8));
+
+      // Recalculate stats
+      const allResponse = await productService.getProducts({ page: 0, size: 100 });
+      const allProducts = allResponse.content;
+
+      const uniqueCategories = new Set(allProducts.map(p => p.category).filter(c => c && c.trim())).size;
+      const uniqueBrands = new Set(allProducts.map(p => p.brand).filter(b => b && b.trim())).size;
+
+      setStats({
+        totalProducts: response.totalElements,
+        categories: uniqueCategories,
+        brands: uniqueBrands,
+      });
+
+      console.log('✅ Data loaded successfully');
+    } catch (error: any) {
+      console.error('❌ Manual data loading failed:', error);
+      setError(`Failed to load data: ${error.message || 'Unknown error'}. Please check your network connection and backend server.`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle search from hero section
   const handleHeroSearch = (query: string) => {
@@ -358,27 +415,27 @@ export const HomePage: React.FC = () => {
   const handleCategoryGroup = (action: string) => {
     switch (action) {
       case 'beauty-group':
-        // Navigate to search with beauty-related categories
-        navigate('/search?q=beauty OR fragrances OR skin-care');
+        // Navigate to search with all beauty-related categories
+        navigate('/search?categories=beauty,fragrances,skin-care');
         break;
       case 'fashion-group':
-        // Navigate to search with fashion-related terms
-        navigate('/search?q=fashion OR clothing OR apparel');
+        // Navigate to search with all fashion-related categories
+        navigate('/search?categories=mens-shirts,mens-shoes,mens-watches,sunglasses,tops,womens-bags,womens-dresses,womens-jewellery,womens-shoes,womens-watches');
         break;
       case 'electronics-group':
-        // Navigate to search with electronics-related terms
-        navigate('/search?q=electronics OR gadgets OR tech');
+        // Navigate to search with all electronics-related categories
+        navigate('/search?categories=smartphones,tablets,laptops,mobile-accessories');
         break;
       case 'home-group':
-        // Navigate to search with home-related terms
-        navigate('/search?q=home OR furniture OR kitchen');
+        // Navigate to search with all home-related categories
+        navigate('/search?categories=furniture,home-decoration,kitchen-accessories');
         break;
       case 'groceries-group':
         navigate('/search?category=groceries');
         break;
       case 'automobile-group':
-        // Navigate to search with automobile-related terms
-        navigate('/search?q=vehicle OR motorcycle OR automotive');
+        // Navigate to search with all automobile-related categories
+        navigate('/search?categories=vehicle,motorcycle');
         break;
       case 'sports-group':
         navigate('/search?category=sports-accessories');
@@ -512,8 +569,57 @@ export const HomePage: React.FC = () => {
     }
   ];
 
+  // Show loading state
+  if (loading && !error) {
+    return (
+      <Section>
+        <Container>
+          <Loading message="Loading product data..." size="lg" />
+        </Container>
+      </Section>
+    );
+  }
+
   return (
     <>
+      {/* Error State */}
+      {error && (
+        <Section style={{ backgroundColor: '#fff3cd', borderLeft: '4px solid #ffc107' }}>
+          <Container>
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+              <h3 style={{ color: '#856404', marginBottom: '10px' }}>
+                ⚠️ Connection Issue Detected
+              </h3>
+              <p style={{ color: '#856404', marginBottom: '20px' }}>
+                {error}
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Button variant="primary" onClick={handleLoadData} disabled={loading}>
+                  {loading ? '⏳ Loading...' : '🔄 Try Loading Data'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.open('/diagnostic.html', '_blank')}
+                >
+                  🔧 Run Diagnostics
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                >
+                  🔄 Refresh Page
+                </Button>
+              </div>
+              <p style={{ fontSize: '12px', color: '#6c757d', marginTop: '15px' }}>
+                💡 <strong>Tip:</strong> If you're on a different device, make sure the backend server is running on port 8080.
+                <br />
+                Check the <a href="/diagnostic.html" target="_blank" style={{ color: '#007bff' }}>diagnostic tool</a> for detailed troubleshooting.
+              </p>
+            </div>
+          </Container>
+        </Section>
+      )}
+
       {/* Hero Section */}
       <HeroSection>
         <Container>
@@ -619,10 +725,11 @@ export const HomePage: React.FC = () => {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => handleCategoryGroup('load-data')}
+              onClick={handleLoadData}
+              disabled={loading}
             >
               <i className="fas fa-database" />
-              Load Data
+              {loading ? 'Loading...' : 'Load Data'}
             </Button>
           </FlexContainer>
         </Container>

@@ -172,20 +172,29 @@ export const SearchResultsPage: React.FC = () => {
 
   const query = searchParams.get('q') || '';
   const category = searchParams.get('category') || '';
+  const categories = searchParams.get('categories') || '';
   const brand = searchParams.get('brand') || '';
 
   // Load search results based on URL parameters
   useEffect(() => {
     const loadSearchResults = async () => {
-      setHasSearched(true);
+      // Only set hasSearched to true if we have actual search criteria
+      if (query || categories || category || brand) {
+        setHasSearched(true);
+      }
 
       try {
         if (query) {
           // Text search - clear filters first
           actions.setFilters({});
           await actions.searchProducts(query);
+        } else if (categories) {
+          // Multiple categories search
+          const categoryList = categories.split(',').map(c => c.trim()).filter(c => c);
+          actions.setFilters({});
+          await actions.loadProductsByCategories(categoryList);
         } else if (category) {
-          // Category-based search using backend endpoint
+          // Single category-based search using backend endpoint
           // Set the category filter so it shows in active filters
           actions.setFilters({ category });
           await actions.loadProductsByCategory(category);
@@ -205,7 +214,7 @@ export const SearchResultsPage: React.FC = () => {
     };
 
     loadSearchResults();
-  }, [query, category, brand]); // Stable actions, no need to include
+  }, [query, category, categories, brand]); // Stable actions, no need to include
 
   // Handle new search
   const handleSearch = async (newQuery: string) => {
@@ -235,6 +244,13 @@ export const SearchResultsPage: React.FC = () => {
   const getSearchTitle = () => {
     if (query) {
       return `Search Results for "${query}"`;
+    } else if (categories) {
+      const categoryList = categories.split(',').map(c => c.trim()).filter(c => c);
+      if (categoryList.length === 1) {
+        return `Products in ${categoryList[0].charAt(0).toUpperCase() + categoryList[0].slice(1)}`;
+      } else {
+        return `Products in Multiple Categories`;
+      }
     } else if (category) {
       return `Products in ${category.charAt(0).toUpperCase() + category.slice(1)}`;
     } else if (brand) {

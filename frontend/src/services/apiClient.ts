@@ -143,21 +143,50 @@ class ApiClient {
     }
   }
 
-  // HTTP Methods
+  // HTTP Methods with enhanced fallback logic
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     try {
       const response = await this.client.get<T>(url, config);
       return response.data;
     } catch (error: any) {
-      // If proxy fails and we're in development, try direct backend URL
-      if (process.env.NODE_ENV === 'development' && url.startsWith('/api/v1')) {
-        // eslint-disable-next-line no-console
-        console.warn('Proxy failed, trying direct backend URL...');
-        const directUrl = `http://localhost:8080${url}`;
-        const response = await this.client.get<T>(directUrl, config);
-        return response.data;
+      console.warn('❌ Primary request failed:', error.message);
+
+      // Enhanced fallback logic for different environments
+      if (url.startsWith('/api/v1')) {
+        const fallbackUrls = [
+          `http://localhost:8080${url}`,
+          `http://127.0.0.1:8080${url}`,
+        ];
+
+        // Add production fallbacks if not localhost
+        if (window.location.hostname !== 'localhost') {
+          fallbackUrls.push(
+            `https://modern-product-search.onrender.com${url}`,
+            `${window.location.protocol}//${window.location.hostname}${url}`
+          );
+        }
+
+        for (const fallbackUrl of fallbackUrls) {
+          try {
+            console.log(`🔄 Trying fallback URL: ${fallbackUrl}`);
+            const response = await this.client.get<T>(fallbackUrl, config);
+            console.log(`✅ Fallback successful: ${fallbackUrl}`);
+            return response.data;
+          } catch (fallbackError: any) {
+            console.warn(`❌ Fallback failed for ${fallbackUrl}:`, fallbackError.message);
+            continue;
+          }
+        }
       }
-      throw error;
+
+      // If all fallbacks fail, throw the original error with enhanced message
+      const enhancedError = new Error(
+        `API request failed: ${error.message}. ` +
+        `Please check if the backend server is running and accessible. ` +
+        `Current API base URL: ${API_CONFIG.BASE_URL}`
+      );
+      enhancedError.stack = error.stack;
+      throw enhancedError;
     }
   }
 

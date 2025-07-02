@@ -5,11 +5,39 @@
 
 // Determine the correct API base URL based on environment
 const getApiBaseUrl = (): string => {
+  // MOBILE OVERRIDE: Force IP address for mobile devices
+  const hostname = window.location.hostname;
+  const pcIpAddress = '192.168.29.35';
+
+  // If accessing via IP address (mobile device), force backend IP
+  if (hostname === pcIpAddress) {
+    const mobileApiUrl = `http://${pcIpAddress}:8080/api/v1`;
+    console.log('📱 MOBILE OVERRIDE: Using IP-based API URL:', mobileApiUrl);
+    return mobileApiUrl;
+  }
+
   // If environment variable is set, use it
   if (process.env.REACT_APP_API_BASE_URL) {
-    console.log('Using API URL from environment:', process.env.REACT_APP_API_BASE_URL);
+    console.log('✅ Using API URL from environment:', process.env.REACT_APP_API_BASE_URL);
     return process.env.REACT_APP_API_BASE_URL;
   }
+
+  // Enhanced environment detection (reuse variables from above)
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Mobile/network device detection (reuse pcIpAddress from above)
+  const isMobileAccess = hostname === pcIpAddress;
+
+  console.log('🔍 Environment detection:', {
+    hostname,
+    isLocalhost,
+    isMobileAccess,
+    isDevelopment,
+    isProduction,
+    nodeEnv: process.env.NODE_ENV
+  });
 
   // For production builds, try to detect the current domain
   if (process.env.NODE_ENV === 'production') {
@@ -26,9 +54,53 @@ const getApiBaseUrl = (): string => {
     }
   }
 
-  // Fallback to localhost for development
-  const devApiUrl = 'http://localhost:8080/api/v1';
-  console.log('Using development API URL:', devApiUrl);
+  // Production environment detection - for hosted visitors
+  if (isProduction && !isLocalhost && !isMobileAccess) {
+    // Always use environment variable in production, with fallback
+    const productionUrl = process.env.REACT_APP_API_BASE_URL || 'https://modern-product-search.onrender.com/api/v1';
+    console.log('🌐 Production environment detected for visitor, using:', productionUrl);
+    console.log('🎯 This ensures hosted visitors can access data from anywhere');
+    return productionUrl;
+  }
+
+  // Handle hosted frontend with different backend scenarios
+  if (!isLocalhost && !isMobileAccess) {
+    // If frontend is hosted but not on mobile network
+    if (hostname.includes('render.com')) {
+      const renderUrl = `https://${hostname}/api/v1`;
+      console.log('🌐 Detected Render deployment, using same domain:', renderUrl);
+      return renderUrl;
+    }
+
+    if (hostname.includes('vercel.app') || hostname.includes('netlify.app') || hostname.includes('github.io')) {
+      // For static deployments, use dedicated backend URL
+      const staticDeploymentUrl = 'https://modern-product-search.onrender.com/api/v1';
+      console.log('📦 Detected static deployment, using backend:', staticDeploymentUrl);
+      return staticDeploymentUrl;
+    }
+
+    // Generic production fallback - try same domain first
+    const prodUrl = `${window.location.protocol}//${hostname}/api/v1`;
+    console.log('🏭 Production environment, trying same domain:', prodUrl);
+    return prodUrl;
+  }
+
+  // Mobile/network access detection
+  if (isMobileAccess || (!isLocalhost && isDevelopment)) {
+    const mobileApiUrl = `http://${pcIpAddress}:8080/api/v1`;
+    console.log('📱 Mobile/Network access detected, using:', mobileApiUrl);
+    return mobileApiUrl;
+  }
+
+  // Development fallback with multiple options
+  const devOptions = [
+    'http://localhost:8080/api/v1',
+    'http://127.0.0.1:8080/api/v1'
+  ];
+
+  const devApiUrl = devOptions[0];
+  console.log('🛠️ Development environment, using:', devApiUrl);
+  console.log('💡 Alternative URLs to try:', devOptions.slice(1));
   return devApiUrl;
 };
 

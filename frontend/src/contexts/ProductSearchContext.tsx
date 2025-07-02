@@ -108,6 +108,7 @@ interface ProductSearchContextType {
     searchProducts: (query: string, fuzzy?: boolean) => Promise<void>;
     loadProducts: (page?: number, size?: number) => Promise<void>;
     loadProductsByCategory: (category: string, page?: number, size?: number) => Promise<void>;
+    loadProductsByCategories: (categories: string[], page?: number, size?: number) => Promise<void>;
     setFilters: (filters: Partial<SearchFilters>) => void;
     replaceFilters: (filters: SearchFilters) => void;
     setSortOption: (sortOption: SortOption) => void;
@@ -211,6 +212,50 @@ export const ProductSearchProvider: React.FC<{ children: React.ReactNode }> = ({
       // Filtering and sorting will be handled by useEffect
     } catch (error: any) {
       dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to load products by category' });
+    }
+  }, []);
+
+  // Load products by multiple categories
+  const loadProductsByCategories = useCallback(async (categories: string[], page?: number, size?: number) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+
+    try {
+      // Load products from all categories sequentially to avoid overwhelming the server
+      const allProducts: Product[] = [];
+
+      for (const category of categories) {
+        try {
+          const response = await productService.getProductsByCategory(category, {
+            page: 0,
+            size: 100, // Get all products for each category
+            sort: 'title',
+            direction: 'asc',
+          });
+          allProducts.push(...response.content);
+        } catch (categoryError) {
+          console.warn(`Failed to load products for category ${category}:`, categoryError);
+          // Continue with other categories even if one fails
+        }
+      }
+
+      // Remove duplicates based on product ID
+      const uniqueProducts = allProducts.filter((product, index, self) =>
+        index === self.findIndex(p => p.id === product.id)
+      );
+
+      // Set all products - client-side filtering and sorting will handle the rest
+      dispatch({ type: 'SET_PRODUCTS', payload: uniqueProducts });
+      dispatch({ type: 'SET_PAGINATION', payload: {
+        page: 0,
+        size: uniqueProducts.length,
+        totalElements: uniqueProducts.length,
+        totalPages: 1,
+      }});
+
+    } catch (error: any) {
+      console.error('loadProductsByCategories error:', error);
+      dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to load products by categories' });
     }
   }, []);
 
@@ -389,6 +434,7 @@ export const ProductSearchProvider: React.FC<{ children: React.ReactNode }> = ({
       searchProducts,
       loadProducts,
       loadProductsByCategory,
+      loadProductsByCategories,
       setFilters,
       replaceFilters,
       setSortOption,
