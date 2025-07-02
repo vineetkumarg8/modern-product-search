@@ -2,7 +2,15 @@ package com.productapi.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.StreamUtils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Controller to serve the React frontend application
@@ -12,25 +20,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class FrontendController {
 
     /**
-     * Serve the React app for the root path
-     */
-    @GetMapping("/")
-    public String index() {
-        return "forward:/index.html";
-    }
-
-    /**
      * Simple test endpoint to verify backend is working
      */
     @GetMapping("/test")
-    @org.springframework.web.bind.annotation.ResponseBody
+    @ResponseBody
     public String test() {
         return "Backend is working! Frontend should be available at the root path.";
     }
 
     /**
+     * Serve the React app for the root path
+     */
+    @GetMapping("/")
+    public ResponseEntity<String> index() {
+        return serveIndexHtml();
+    }
+
+    /**
      * Serve the React app for all non-API routes
-     * This enables client-side routing to work properly
      */
     @GetMapping(value = {
         "/search",
@@ -42,15 +49,42 @@ public class FrontendController {
         "/contact",
         "/{path:[^\\.]*}"
     })
-    public String forward() {
-        return "forward:/index.html";
+    public ResponseEntity<String> forward() {
+        return serveIndexHtml();
     }
 
     /**
-     * Health check endpoint for the frontend
+     * Serve index.html content directly
      */
-    @GetMapping("/health")
-    public String health() {
-        return "forward:/index.html";
+    private ResponseEntity<String> serveIndexHtml() {
+        try {
+            // Try to serve the React app first
+            Resource indexResource = new ClassPathResource("static/index.html");
+            if (indexResource.exists()) {
+                String content = StreamUtils.copyToString(indexResource.getInputStream(), StandardCharsets.UTF_8);
+                return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(content);
+            }
+
+            // Fallback to our custom loading page
+            Resource fallbackResource = new ClassPathResource("static/fallback.html");
+            if (fallbackResource.exists()) {
+                String content = StreamUtils.copyToString(fallbackResource.getInputStream(), StandardCharsets.UTF_8);
+                return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(content);
+            }
+
+            // Last resort - simple HTML
+            return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_HTML)
+                .body("<!DOCTYPE html><html><head><title>Modern Product Search</title></head><body style='font-family: Arial, sans-serif; text-align: center; padding: 50px;'><h1>🚀 Backend is Running!</h1><p>Frontend is loading...</p><p><a href='/test'>Test Backend</a> | <a href='/api/v1/actuator/health'>Health Check</a></p></body></html>");
+
+        } catch (IOException e) {
+            return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_HTML)
+                .body("<!DOCTYPE html><html><head><title>Error</title></head><body style='font-family: Arial, sans-serif; text-align: center; padding: 50px;'><h1>❌ Error Loading Frontend</h1><p>Error: " + e.getMessage() + "</p><p><a href='/test'>Test Backend</a></p></body></html>");
+        }
     }
 }
