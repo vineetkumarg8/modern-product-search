@@ -1,23 +1,23 @@
 package com.productapi.controller;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Controller to serve the React frontend application
- * Handles all non-API routes and serves index.html for client-side routing
+ * Root controller to handle requests outside the /api/v1 context
+ * This serves the React frontend and handles root-level routes
  */
 @Controller
-public class FrontendController {
+public class RootController {
 
     /**
      * Simple test endpoint to verify backend is working
@@ -25,7 +25,7 @@ public class FrontendController {
     @GetMapping("/test")
     @ResponseBody
     public String test() {
-        return "Backend is working! Frontend should be available at the root path.";
+        return "Backend is working! API is available at /api/v1/";
     }
 
     /**
@@ -66,7 +66,7 @@ public class FrontendController {
                     .contentType(MediaType.TEXT_HTML)
                     .body(content);
             }
-
+            
             // Fallback to our custom loading page
             Resource fallbackResource = new ClassPathResource("static/fallback.html");
             if (fallbackResource.exists()) {
@@ -75,12 +75,12 @@ public class FrontendController {
                     .contentType(MediaType.TEXT_HTML)
                     .body(content);
             }
-
+            
             // Last resort - simple HTML
             return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)
-                .body("<!DOCTYPE html><html><head><title>Modern Product Search</title></head><body style='font-family: Arial, sans-serif; text-align: center; padding: 50px;'><h1>🚀 Backend is Running!</h1><p>Frontend is loading...</p><p><a href='/test'>Test Backend</a> | <a href='/api/v1/actuator/health'>Health Check</a></p></body></html>");
-
+                .body("<!DOCTYPE html><html><head><title>Modern Product Search</title></head><body style='font-family: Arial, sans-serif; text-align: center; padding: 50px;'><h1>🚀 Backend is Running!</h1><p>API is available at <a href='/api/v1/actuator/health'>/api/v1/</a></p><p><a href='/test'>Test Backend</a> | <a href='/api/v1/actuator/health'>Health Check</a></p></body></html>");
+                
         } catch (IOException e) {
             return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)
