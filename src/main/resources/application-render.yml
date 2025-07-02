@@ -29,7 +29,7 @@ spring:
 server:
   port: ${PORT:8080}
   servlet:
-    context-path: /api/v1
+    context-path: /
   # Enable CORS for hosted frontend
   forward-headers-strategy: framework
 
@@ -48,6 +48,7 @@ logging:
 management:
   endpoints:
     web:
+      base-path: /api/v1/actuator
       exposure:
         include: health,info
   endpoint:

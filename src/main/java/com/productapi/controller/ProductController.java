@@ -29,7 +29,7 @@ import java.util.List;
  * Provides endpoints for searching and retrieving product data.
  */
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api/v1/products")
 @Validated
 @Tag(name = "Products", description = "Operations for searching and retrieving product data")
 public class ProductController {

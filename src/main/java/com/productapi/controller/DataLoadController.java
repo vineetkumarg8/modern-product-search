@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
  * Provides endpoints to load product data from external APIs.
  */
 @RestController
-@RequestMapping("/data")
+@RequestMapping("/api/v1/data")
 @Tag(name = "Data Loading", description = "Operations for loading product data from external APIs")
 public class DataLoadController {
 
