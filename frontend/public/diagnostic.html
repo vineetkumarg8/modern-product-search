@@ -409,9 +409,6 @@
                     <button onclick="loadDataFromAPI()" class="button success">
                         🔄 Load Data from API
                     </button>
-                    <button onclick="debugApiResponses()" class="button" style="background: #6f42c1;">
-                        🔍 Debug API Responses
-                    </button>
                 </div>
             </div>
 
@@ -698,19 +695,6 @@ Test Started: ${deviceInfo.timestamp}
             const container = document.getElementById('data-tests');
             container.innerHTML = '';
 
-            // Add delay for production where data might still be loading
-            const isProduction = !window.location.hostname.includes('localhost');
-            if (isProduction) {
-                await new Promise(resolve => setTimeout(resolve, 3000));
-            }
-
-            // Add a small delay for production environments where data might still be loading
-            const isProduction = !window.location.hostname.includes('localhost');
-            if (isProduction) {
-                addTestResult('data-tests', 'Production Environment Detected', true, 'Adding 2-second delay for data loading...');
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-
             const tests = [
                 { name: 'Check Products Count', endpoint: '/api/v1/products?size=1' },
                 { name: 'Check Data Status', endpoint: '/api/v1/data/status' },
@@ -720,67 +704,27 @@ Test Started: ${deviceInfo.timestamp}
 
             for (const test of tests) {
                 const startTime = Date.now();
-                let success = false;
-                let finalResponse = null;
-                let finalData = null;
-
-                // Retry mechanism for production
-                for (let attempt = 1; attempt <= 3; attempt++) {
-                    try {
-                        const response = await fetch(test.endpoint);
-                        if (response.ok) {
-                            finalResponse = response;
-                            finalData = await response.json();
-                            success = true;
-                            break;
-                        } else if (attempt === 3) {
-                            finalResponse = response;
-                        }
-                    } catch (error) {
-                        if (attempt === 3) {
-                            throw error;
-                        }
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
-                }
-
-                const duration = Date.now() - startTime;
-
                 try {
+                    const response = await fetch(test.endpoint);
+                    const duration = Date.now() - startTime;
 
-                    if (success && finalData) {
+                    if (response.ok) {
+                        const data = await response.json();
                         let details = '';
 
-                        console.log(`API Response for ${test.name}:`, finalData); // Debug log
-
                         if (test.endpoint.includes('products?size=1')) {
-                            // For paginated products endpoint
-                            const totalProducts = finalData.data?.totalElements || finalData.totalElements || 0;
-                            details = `Total products: ${totalProducts}`;
+                            details = `Total products: ${data.data?.totalElements || 0}`;
                         } else if (test.endpoint.includes('categories')) {
-                            // For categories endpoint - data.data should be array
-                            const categoriesCount = finalData.data?.length || finalData.length || 0;
-                            details = `Categories found: ${categoriesCount}`;
-                            if (categoriesCount > 0 && finalData.data) {
-                                details += ` (${finalData.data.slice(0, 3).join(', ')}${finalData.data.length > 3 ? '...' : ''})`;
-                            }
+                            details = `Categories found: ${data.data?.length || 0}`;
                         } else if (test.endpoint.includes('brands')) {
-                            // For brands endpoint - data.data should be array
-                            const brandsCount = finalData.data?.length || finalData.length || 0;
-                            details = `Brands found: ${brandsCount}`;
-                            if (brandsCount > 0 && finalData.data) {
-                                details += ` (${finalData.data.slice(0, 3).join(', ')}${finalData.data.length > 3 ? '...' : ''})`;
-                            }
+                            details = `Brands found: ${data.data?.length || 0}`;
                         } else if (test.endpoint.includes('status')) {
-                            // For data status endpoint
-                            const status = finalData.data?.status || finalData.status || 'unknown';
-                            details = `Status: ${status}`;
+                            details = `Status: ${data.data?.status || 'unknown'}`;
                         }
 
                         addTestResult('data-tests', test.name, true, details, duration);
                     } else {
-                        const statusCode = finalResponse?.status || 'Unknown';
-                        addTestResult('data-tests', test.name, false, `HTTP ${statusCode}`, duration);
+                        addTestResult('data-tests', test.name, false, `HTTP ${response.status}`, duration);
                     }
                 } catch (error) {
                     const duration = Date.now() - startTime;
