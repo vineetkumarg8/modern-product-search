@@ -2,7 +2,7 @@ server:
   port: 8080
   address: 0.0.0.0  # Allow connections from any IP address
   servlet:
-    context-path: /api/v1
+    context-path: /
 
 spring:
   application:
@@ -103,6 +103,7 @@ logging:
 management:
   endpoints:
     web:
+      base-path: /api/v1/actuator
       exposure:
         include: health,info,metrics,prometheus
   endpoint:

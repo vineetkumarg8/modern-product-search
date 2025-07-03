@@ -55,7 +55,7 @@ ls -la build/  # Should contain index.html, static/ folder
 
 #### Routing Configuration
 - Check `WebConfig.java` for proper static resource handling
-- Verify `FrontendController.java` handles root path
+- Verify `RootController.java` handles root path
 - Ensure context-path is set correctly in `application.yml`
 
 ### Issue 2: Data Not Loading
@@ -223,7 +223,7 @@ REACT_APP_ENVIRONMENT=production
 server:
   port: 8080
   servlet:
-    context-path: /api/v1
+    context-path: /
 
 # application-render.yml (production)
 server:
