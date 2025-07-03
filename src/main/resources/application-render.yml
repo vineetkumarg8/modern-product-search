@@ -33,10 +33,17 @@ server:
 
 external:
   api:
-    base-url: https://dummyjson.com
-    timeout:
-      connect: 5000
-      read: 10000
+    products:
+      base-url: https://dummyjson.com
+      endpoints:
+        all-products: /products?limit=0
+        product-by-id: /products/{id}
+      timeout:
+        connect: 10000
+        read: 30000
+      retry:
+        max-attempts: 3
+        delay: 2000
 
 logging:
   level:
@@ -60,3 +67,32 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# Resilience4j Configuration for External API calls
+resilience4j:
+  circuitbreaker:
+    instances:
+      external-api:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 60
+        event-consumer-buffer-size: 10
+  retry:
+    instances:
+      external-api:
+        max-attempts: 5
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.reactive.function.client.WebClientRequestException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+  timelimiter:
+    instances:
+      external-api:
+        timeout-duration: 15s
