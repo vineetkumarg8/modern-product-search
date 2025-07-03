@@ -9,8 +9,8 @@
         <relativePath/>
     </parent>
     <groupId>com.productapi</groupId>
-    <artifactId>modern-product-search</artifactId>
-    <version>1.0.0</version>
+    <artifactId>product-orchestration-api</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
     <name>Modern Product Search</name>
     <description>Modern full-stack product search application with Spring Boot and React</description>
     <properties>
