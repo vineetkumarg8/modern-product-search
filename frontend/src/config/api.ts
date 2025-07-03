@@ -46,18 +46,17 @@ const getApiBaseUrl = (): string => {
 
     // If running on Render or other production domain
     if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-      // For now, you'll need to manually set the backend URL
-      // Replace this with your actual Render backend URL
-      const productionApiUrl = 'https://modern-product-search.onrender.com/api/v1';
-      console.log('Using production API URL:', productionApiUrl);
+      // Use same domain for production (relative URL)
+      const productionApiUrl = `${window.location.protocol}//${window.location.host}/api/v1`;
+      console.log('Using production API URL (same domain):', productionApiUrl);
       return productionApiUrl;
     }
   }
 
   // Production environment detection - for hosted visitors
   if (isProduction && !isLocalhost && !isMobileAccess) {
-    // Always use environment variable in production, with fallback
-    const productionUrl = process.env.REACT_APP_API_BASE_URL || 'https://modern-product-search.onrender.com/api/v1';
+    // Use same domain for production, with environment variable fallback
+    const productionUrl = process.env.REACT_APP_API_BASE_URL || `${window.location.protocol}//${window.location.host}/api/v1`;
     console.log('🌐 Production environment detected for visitor, using:', productionUrl);
     console.log('🎯 This ensures hosted visitors can access data from anywhere');
     return productionUrl;
