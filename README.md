@@ -6,6 +6,21 @@ A modern full-stack web application for searching and browsing products with adv
 
 This application demonstrates modern full-stack development practices with a comprehensive product search system. Users can search through a product database with real-time filtering, responsive design, and optimized performance.
 
+<img width="1920" height="1011" alt="Screenshot (299)" src="https://github.com/user-attachments/assets/292176dc-e597-4d8c-8552-6dc9aac00a10" />
+<img width="1920" height="1011" alt="Screenshot (300)" src="https://github.com/user-attachments/assets/b63ba571-9f64-421b-aca9-41677322e44e" />
+<img width="1920" height="1020" alt="Screenshot (301)" src="https://github.com/user-attachments/assets/96f405b7-d3db-4085-a243-344bda6fdb36" />
+
+<img width="1916" height="1009" alt="Screenshot (304)" src="https://github.com/user-attachments/assets/e56a775d-a52e-4cce-9ae9-d3676fe20be5" />
+
+<img width="1918" height="1013" alt="Screenshot (307)" src="https://github.com/user-attachments/assets/35b28f5e-6ffa-457d-ac94-cbda47a6bad3" />
+
+
+
+
+
+
+
+
 ## ✨ Key Features
 
 ### Frontend Features
