@@ -44,11 +44,11 @@ This application demonstrates modern full-stack development practices with a com
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Frontend (React)                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │   Pages     │  │ Components  │  │   Context   │              │
-│  │ • HomePage  │  │ • SearchBar │  │ • ProductSearch            │
-│  │ • SearchPage│  │ • ProductGrid│  │ • StateManagement         │
-│  └─────────────┘  └─────────────┘  └─────────────┘              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐          │
+│  │   Pages     │  │ Components  │  │  Context        │          │
+│  │ • HomePage  │  │• SearchBar  │  │•ProductSearch   │          │  
+│  │ • SearchPage│  │• ProductGrid│  │•StateManagement │          │
+│  └─────────────┘  └─────────────┘  └─────────────────┘          │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                             HTTP/REST
