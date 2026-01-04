@@ -56,21 +56,21 @@ This application demonstrates modern full-stack development practices with a com
 ┌─────────────────────────────────────────────────────────────────┐
 │                       Backend (Spring Boot)                     │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │ Controllers │  │  Services   │  │ Repositories│              │
-│  │ • ProductCtrl│  │ • ProductSvc│  │ • ProductRepo│            │
-│  │ • DataLoadCtrl│ │ • DataLoadSvc│ │ • SearchRepo│             │
+│  │ Controllers │  │  Services   │  │Repositories │              │
+│  │•ProductCtrl │  │• ProductSvc │  │• ProductRepo│              │
+│  │•DataLoadCtrl│  │• DataLoadSvc│  │• SearchRepo │              │
 │  └─────────────┘  └─────────────┘  └─────────────┘              │
 │                                │                                │
 │                                ▼                                │
 │                    ┌─────────────────┐                          │
 │                    │   H2 Database   │                          │
-│                    │ (In-Memory)     │                          │
+│                    │   (In-Memory)   │                          │
 │                    └─────────────────┘                          │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
                        ┌─────────────────┐
-                       │   External API  │
+                       │  External API   │
                        │  (DummyJSON)    │
                        └─────────────────┘
 ```
@@ -512,7 +512,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Documentation**: [API Documentation](http://localhost:8080/api/v1/swagger-ui.html)
 - **Issues**: [GitHub Issues](https://github.com/productapi/product-orchestration-api/issues)
-- **Email**: support@productapi.com
 
 ## 🙏 Acknowledgments
 
